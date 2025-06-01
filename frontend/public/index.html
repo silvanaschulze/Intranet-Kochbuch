@@ -1,0 +1,96 @@
+<!--
+@fileoverview Hauptseite des Intranet-Kochbuch Frontend
+@module index.html
+
+Dieses HTML-Dokument dient als Einstiegspunkt für die React-Anwendung:
+- Definiert die grundlegende HTML-Struktur
+- Lädt notwendige Meta-Tags und Icons
+- Stellt den Mounting-Punkt für die React-App bereit
+- Enthält Fallback für deaktiviertes JavaScript
+
+@meta
+@charset UTF-8
+@viewport width=device-width, initial-scale=1
+@theme-color #ffffff
+
+@icons
+@favicon favicon.ico
+@apple-touch-icon logo192.png, logo512.png
+@manifest manifest.json
+
+@language Deutsch (de)
+@title Intranet-Kochbuch
+@description Intranet-Kochbuch - Teilen und entdecken Sie köstliche Rezepte
+-->
+
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="description" content="Intranet-Kochbuch - Ihre digitale Rezeptsammlung" />
+    <meta name="keywords" content="Kochbuch, Rezepte, Kochen, Backen, Intranet, Community" />
+    <meta name="author" content="Intranet-Kochbuch Team" />
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Intranet-Kochbuch" />
+    <meta property="og:description" content="Teilen und entdecken Sie köstliche Rezepte in unserer Gemeinschaft" />
+    <meta property="og:image" content="%PUBLIC_URL%/og-image.jpg" />
+    
+    <!-- PWA Support -->
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="%PUBLIC_URL%/logo512.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Preload wichtiger Assets -->
+    <link rel="preload" href="%PUBLIC_URL%/fonts/roboto-v20-german-regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    
+    <title>Intranet-Kochbuch</title>
+    
+    <!-- Inline Critical CSS -->
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Roboto', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      #root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .loading-spinner {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <div style="padding: 20px; text-align: center;">
+        <h1>JavaScript ist deaktiviert</h1>
+        <p>Sie müssen JavaScript aktivieren, um diese App zu nutzen. Hier erfahren Sie, 
+        <a href="https://www.enable-javascript.com/de/" target="_blank" rel="noopener noreferrer">
+          wie Sie JavaScript in Ihrem Browser aktivieren</a>.</p>
+      </div>
+    </noscript>
+    <div id="root">
+      <!-- Initiales Lade-Feedback -->
+      <div class="loading-spinner">
+        Laden...
+      </div>
+    </div>
+  </body>
+</html>

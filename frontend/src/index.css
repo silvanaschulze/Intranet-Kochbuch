@@ -1,0 +1,87 @@
+/* Reset e configurações globais */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9fa;
+}
+
+/* Layout principal */
+.app-container {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header fixo */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+}
+
+/* Conteúdo principal */
+.main-content {
+  flex: 1 0 auto;
+  margin-top: 56px; /* Altura do navbar */
+  padding: 20px 0;
+  width: 100%;
+}
+
+/* Footer */
+footer {
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* Container para lista de receitas */
+.recipe-list-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+/* Grid de receitas */
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 20px 0;
+}
+
+/* Estilos de rolagem personalizados */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Correção para iOS */
+@supports (-webkit-touch-callout: none) {
+  .app-container {
+    min-height: -webkit-fill-available;
+  }
+}

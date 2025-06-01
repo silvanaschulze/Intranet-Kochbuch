@@ -1,0 +1,76 @@
+{
+  "short_name": "Kochbuch",
+  "name": "Intranet-Kochbuch",
+  "description": "Teilen und entdecken Sie köstliche Rezepte in unserer Gemeinschaft",
+  "categories": ["food", "cooking", "recipes", "lifestyle"],
+  "lang": "de",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#007bff",
+  "background_color": "#ffffff",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Neues Rezept",
+      "short_name": "Neu",
+      "description": "Erstellen Sie ein neues Rezept",
+      "url": "/rezept-erstellen",
+      "icons": [{ "src": "icons/add.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Meine Rezepte",
+      "short_name": "Meine",
+      "description": "Zeigen Sie Ihre Rezepte an",
+      "url": "/meine-rezepte",
+      "icons": [{ "src": "icons/recipe.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Startseite des Intranet-Kochbuchs"
+    },
+    {
+      "src": "screenshots/recipe.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Detailansicht eines Rezepts"
+    }
+  ],
+  "related_applications": [],
+  "share_target": {
+    "action": "/teilen",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}
