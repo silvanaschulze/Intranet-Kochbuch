@@ -1,6 +1,78 @@
-# Ignorar node_modules e cache
-node_modules/
-.cache/
-*.pack
+# ⚙️ Ambientes Virtuais
+venv/
+.env/
+.venv/
+
+# 🧪 Python Cache e metadados
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyc
+
+# 🔧 Configurações de IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# 🛠️ Arquivos de build ou temporários
 *.log
+*.bak
+*.tmp
+*.swp
+*.swo
+*.DS_Store
+*.db
+*.sqlite3
+*.pid
+
+# 📦 Pacotes e dependências (não subir node_modules!)
+node_modules/
+*.tgz
+*.tar.gz
+*.zip
+
+# 🔐 Arquivos sensíveis
 .env
+*.env
+secrets.json
+config.json
+
+# 🖼️ Uploads e mídias geradas
+backend/static/uploads/
+frontend/public/uploads/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.avif
+
+# 📦 Dependências Python (apenas o requirements.txt é necessário)
+Pipfile
+Pipfile.lock
+poetry.lock
+
+# ⚗️ Arquivos de execução ou binários
+*.exe
+*.out
+*.app
+*.so
+*.dll
+
+# 📘 Jupyter Notebooks (se houver)
+.ipynb_checkpoints/
+
+# 🚀 Pastas de build do frontend (caso use React, Angular, etc.)
+build/
+dist/
+.cache/
+.npm/
+
+# 📦 Outros arquivos não rastreáveis
+*.coverage
+coverage.xml
+htmlcov/
+
+
+
