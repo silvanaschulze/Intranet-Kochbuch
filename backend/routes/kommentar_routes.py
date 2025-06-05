@@ -13,7 +13,8 @@ from models.kommentar import (
     kommentar_erstellen,
     kommentar_loeschen,
     kommentare_abrufen,
-    kommentar_details
+    kommentar_details,
+    kommentar_bearbeiten
 )
 from utils.token import token_erforderlich
 
@@ -136,4 +137,46 @@ def kommentar_details_route(kommentar_id):
     else:
         return jsonify({
             "fehler": "Kommentar nicht gefunden"
-        }), 404 
+        }), 404
+
+@kommentar_bp.route('/<int:kommentar_id>', methods=['PUT'])
+@token_erforderlich
+def kommentar_bearbeiten_route(token_daten, kommentar_id):
+    """
+    Bearbeitet einen Kommentar, wenn er dem eingeloggten Benutzer gehört.
+    
+    @route PUT /api/kommentare/{kommentar_id}
+    
+    @auth Erfordert gültigen JWT-Token
+    
+    @param {int} kommentar_id - ID des Kommentars
+    
+    @body {Object} request_body
+    @body {string} request_body.text - Neuer Kommentartext
+    
+    @return {Object} response
+    @return {string} response.nachricht - Erfolgsmeldung
+    
+    @throws {400} Bei fehlendem oder ungültigem Text
+    @throws {401} Bei fehlendem oder ungültigem Token
+    @throws {403} Wenn der Benutzer nicht berechtigt ist
+    @throws {500} Bei Serverfehler
+    """
+    daten = request.get_json()
+    text = daten.get('text')
+    
+    if not text or not text.strip():
+        return jsonify({
+            "fehler": "Kommentartext ist erforderlich"
+        }), 400
+    
+    benutzer_id = token_daten['benutzer_id']
+    
+    if kommentar_bearbeiten(kommentar_id, benutzer_id, text.strip()):
+        return jsonify({
+            "nachricht": "Kommentar erfolgreich bearbeitet"
+        }), 200
+    else:
+        return jsonify({
+            "fehler": "Nicht berechtigt oder Kommentar nicht gefunden"
+        }), 403 

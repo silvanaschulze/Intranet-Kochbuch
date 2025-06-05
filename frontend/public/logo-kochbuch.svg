@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Fundo circular -->
+  <circle cx="50" cy="50" r="45" fill="#667eea" stroke="#764ba2" stroke-width="2"/>
+  
+  <!-- Chapéu de chef -->
+  <ellipse cx="50" cy="35" rx="20" ry="8" fill="white"/>
+  <rect x="30" y="35" width="40" height="25" fill="white" rx="2"/>
+  <ellipse cx="50" cy="60" rx="20" ry="3" fill="#f0f0f0"/>
+  
+  <!-- Detalhes do chapéu -->
+  <ellipse cx="45" cy="30" rx="3" ry="2" fill="#f0f0f0"/>
+  <ellipse cx="55" cy="28" rx="2" ry="1.5" fill="#f0f0f0"/>
+  <ellipse cx="50" cy="32" rx="2.5" ry="1.5" fill="#f0f0f0"/>
+  
+  <!-- Garfo -->
+  <g transform="translate(35, 70)">
+    <rect x="0" y="0" width="2" height="15" fill="#ffc107"/>
+    <rect x="-1" y="-2" width="1" height="4" fill="#ffc107"/>
+    <rect x="0.5" y="-2" width="1" height="4" fill="#ffc107"/>
+    <rect x="2" y="-2" width="1" height="4" fill="#ffc107"/>
+    <rect x="3.5" y="-2" width="1" height="4" fill="#ffc107"/>
+  </g>
+  
+  <!-- Faca -->
+  <g transform="translate(63, 70)">
+    <rect x="0" y="0" width="2" height="15" fill="#ffc107"/>
+    <path d="M -3 -2 L 5 -2 L 4 2 L -2 2 Z" fill="#e0e0e0"/>
+  </g>
+  
+  <!-- Prato -->
+  <ellipse cx="50" cy="80" rx="12" ry="3" fill="#28a745"/>
+  <ellipse cx="50" cy="79" rx="10" ry="2" fill="#34ce57"/>
+  
+  <!-- Vapor/estrelas decorativas -->
+  <g opacity="0.7">
+    <circle cx="25" cy="20" r="1" fill="white">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="75" cy="25" r="1.5" fill="white">
+      <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="20" cy="75" r="1" fill="white">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="80" cy="70" r="1.2" fill="white">
+      <animate attributeName="opacity" values="1;0.4;1" dur="2.2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+  
+  <!-- Elemento decorativo: colher pequena -->
+  <g transform="translate(15, 45) rotate(-30)">
+    <ellipse cx="0" cy="0" rx="2" ry="4" fill="#ffc107"/>
+    <rect x="-0.5" y="4" width="1" height="8" fill="#ffc107"/>
+  </g>
+  
+  <!-- Elemento decorativo: folha -->
+  <g transform="translate(85, 50)">
+    <path d="M 0 0 Q -3 -5 0 -8 Q 3 -5 0 0" fill="#28a745"/>
+    <line x1="0" y1="0" x2="0" y2="-4" stroke="#1e7e34" stroke-width="0.5"/>
+  </g>
+</svg> 

@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import api from '../../services/api';
 
 /**
- * Componente para seleção de categorias
+ * Komponente für Kategorieauswahl
  * @component
  */
 const CategorySelect = ({ value, onChange, isInvalid, feedback }) => {
@@ -23,8 +23,8 @@ const CategorySelect = ({ value, onChange, isInvalid, feedback }) => {
       setCategories(response.data.kategorien || []);
       setError(null);
     } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
-      setError('Não foi possível carregar as categorias.');
+      console.error('Fehler beim Laden der Kategorien:', error);
+      setError('Kategorien konnten nicht geladen werden.');
     } finally {
       setLoading(false);
     }
@@ -32,29 +32,35 @@ const CategorySelect = ({ value, onChange, isInvalid, feedback }) => {
 
   if (loading) {
     return (
-      <Form.Select disabled>
-        <option>Carregando categorias...</option>
-      </Form.Select>
+      <Form.Group className="mb-3">
+        <Form.Label>Kategorie</Form.Label>
+        <Form.Select disabled>
+          <option>Kategorien werden geladen...</option>
+        </Form.Select>
+      </Form.Group>
     );
   }
 
   if (error) {
     return (
-      <Form.Select disabled>
-        <option>Erro ao carregar categorias</option>
-      </Form.Select>
+      <Form.Group className="mb-3">
+        <Form.Label>Kategorie</Form.Label>
+        <Form.Select disabled>
+          <option>Fehler beim Laden der Kategorien</option>
+        </Form.Select>
+      </Form.Group>
     );
   }
 
   return (
-    <Form.Group>
-      <Form.Label>Categoria</Form.Label>
+    <Form.Group className="mb-3">
+      <Form.Label>Kategorie</Form.Label>
       <Form.Select
         value={value}
         onChange={onChange}
         isInvalid={isInvalid}
       >
-        <option value="">Selecione uma categoria</option>
+        <option value="">Kategorie auswählen</option>
         {categories.map(category => (
           <option key={category.id} value={category.id}>
             {category.name}

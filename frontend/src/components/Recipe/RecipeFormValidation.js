@@ -1,31 +1,31 @@
 /**
- * Valida os dados do formulário de receita
- * @param {Object} formData - Dados do formulário
- * @param {string} formData.titel - Título da receita
- * @param {Array} formData.zutaten - Lista de ingredientes
- * @param {string} formData.zubereitung - Instruções de preparo
- * @param {string|number} formData.kategorie_id - ID da categoria
- * @returns {Object} Objeto com erros de validação
+ * Validiert die Daten des Rezeptformulars
+ * @param {Object} formData - Formulardaten
+ * @param {string} formData.titel - Titel des Rezepts
+ * @param {Array} formData.zutaten - Liste der Zutaten
+ * @param {string} formData.zubereitung - Zubereitungsanleitung
+ * @param {string|number} formData.kategorie_id - ID der Kategorie
+ * @returns {Object} Objekt mit Validierungsfehlern
  */
 export const validateRecipeForm = (formData) => {
   const errors = {};
 
-  // Validação do título
+  // Validierung des Titels
   if (!formData.titel?.trim()) {
     errors.titel = 'Titel ist erforderlich';
   }
 
-  // Validação da descrição
+  // Validierung der Beschreibung
   if (!formData.zubereitung?.trim()) {
     errors.zubereitung = 'Zubereitungsanleitung ist erforderlich';
   }
 
-  // Validação da categoria
+  // Validierung der Kategorie
   if (!formData.kategorie_id) {
     errors.kategorie_id = 'Bitte wählen Sie eine Kategorie';
   }
 
-  // Validação dos ingredientes
+  // Validierung der Zutaten
   const hasValidIngredients = formData.zutaten?.every(zutat => 
     zutat.name.trim() && zutat.menge.trim()
   );
@@ -38,9 +38,9 @@ export const validateRecipeForm = (formData) => {
 };
 
 /**
- * Verifica se há erros de validação
- * @param {Object} errors - Objeto com erros de validação
- * @returns {boolean} True se não houver erros
+ * Überprüft, ob Validierungsfehler vorhanden sind
+ * @param {Object} errors - Objekt mit Validierungsfehlern
+ * @returns {boolean} True wenn keine Fehler vorhanden sind
  */
 export const isFormValid = (errors) => {
   return Object.keys(errors).length === 0;

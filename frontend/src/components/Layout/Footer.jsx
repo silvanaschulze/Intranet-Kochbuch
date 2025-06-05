@@ -17,37 +17,37 @@ const Footer = () => (
     <Container>
       <Row>
         <Col md={4} className="mb-3 mb-md-0">
-          <h5>Intranet-Kochbuch</h5>
-          <p className="text-muted small mb-0">
-            Sua plataforma digital para compartilhar e descobrir receitas.
+          <h5 className="text-white">Intranet-Kochbuch</h5>
+          <p className="text-light small mb-0">
+            Ihre digitale Plattform zum Teilen und Entdecken von Rezepten.
           </p>
         </Col>
         <Col md={4} className="mb-3 mb-md-0">
-          <h5>Acesso Rápido</h5>
+          <h5 className="text-white">Schnellzugriff</h5>
           <ul className="list-unstyled mb-0">
             <li className="mb-2">
               <Link to="/rezepte" className="text-light text-decoration-none">
-                Todas as Receitas
+                Alle Rezepte
               </Link>
             </li>
             <li className="mb-2">
               <Link to="/kategorien" className="text-light text-decoration-none">
-                Categorias
+                Kategorien
               </Link>
             </li>
             <li>
               <Link to="/favoriten" className="text-light text-decoration-none">
-                Favoritos
+               Favoriten
               </Link>
             </li>
           </ul>
         </Col>
         <Col md={4}>
-          <h5>Legal</h5>
+          <h5 className="text-white">Legal</h5>
           <ul className="list-unstyled mb-0">
             <li className="mb-2">
               <Link to="/datenschutz" className="text-light text-decoration-none">
-                Privacidade
+                Datenschutz
               </Link>
             </li>
             <li className="mb-2">
@@ -57,10 +57,18 @@ const Footer = () => (
             </li>
             <li>
               <Link to="/nutzungsbedingungen" className="text-light text-decoration-none">
-                Termos de Uso
+                Nutzungsbedingungen
               </Link>
             </li>
           </ul>
+        </Col>
+      </Row>
+      <hr className="border-light opacity-25 my-4" />
+      <Row>
+        <Col className="text-center">
+          <p className="text-light small mb-0">
+            &copy; 2024 Intranet-Kochbuch. Entwickelt mit von Silvana Schulze.
+          </p>
         </Col>
       </Row>
     </Container>

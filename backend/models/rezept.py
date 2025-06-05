@@ -12,6 +12,29 @@ Dieses Modul implementiert die Datenbankoperationen für Rezepte:
 
 from db import verbinden, verbindung_schliessen
 import json
+import mysql.connector
+from db import get_db
+
+def verarbeite_kategorie_info(rezept):
+    """
+    Hilfsfunktion zur Verarbeitung der Kategorieinformationen
+    """
+    if not rezept.get('kategorie_name'):
+        rezept['kategorie_name'] = 'Ohne Kategorie'
+    return rezept
+
+def verarbeite_rezept_zutaten(rezept):
+    """
+    Hilfsfunktion zur Verarbeitung der Zutaten von JSON zu Liste
+    """
+    if isinstance(rezept.get('zutaten'), str):
+        try:
+            rezept['zutaten'] = json.loads(rezept['zutaten'])
+        except:
+            rezept['zutaten'] = []
+    elif not rezept.get('zutaten'):
+        rezept['zutaten'] = []
+    return rezept
 
 def rezept_erstellen(titel, zutaten, zubereitung, benutzer_id, bild_pfad=None, kategorie_id=None):
     """
@@ -75,6 +98,7 @@ def rezept_abrufen(rezept_id):
     @return {Array<Object>} return.zutaten - Liste der Zutaten
     @return {string} return.zubereitung - Zubereitungsanleitung
     @return {string} return.benutzer_name - Name des Erstellers
+    @return {Object} return.benutzer - Vollständige Benutzerinformationen
     @return {string} [return.bild_pfad] - Pfad zum Rezeptbild
     @return {int} [return.kategorie_id] - ID der Kategorie
     
@@ -90,22 +114,32 @@ def rezept_abrufen(rezept_id):
         cursor = verbindung.cursor(dictionary=True)
         
         sql = """
-        SELECT r.*, b.name as benutzer_name
+        SELECT r.*, 
+               b.name as benutzer_name, 
+               b.id as benutzer_id,
+               b.email as benutzer_email,
+               k.name as kategorie_name
         FROM rezepte r
         JOIN benutzer b ON r.benutzer_id = b.id
+        LEFT JOIN kategorien k ON r.kategorie_id = k.id
         WHERE r.id = %s
         """
         cursor.execute(sql, (rezept_id,))
         rezept = cursor.fetchone()
         
         if rezept:
-            # Zutaten von JSON-String in Liste umwandeln
-            try:
-                rezept['zutaten'] = json.loads(rezept['zutaten'])
-            except:
-                # Falls die Zutaten nicht als gültiger JSON-String gespeichert sind
-                pass
-                
+            # Erstelle benutzer-Objekt mit vollständigen Informationen
+            rezept['benutzer'] = {
+                'id': rezept.get('benutzer_id'),
+                'name': rezept.get('benutzer_name', 'Unbekannt'),
+                'email': rezept.get('benutzer_email')
+            }
+            
+            # Verarbeite Zutaten von JSON-String zu Liste
+            rezept = verarbeite_rezept_zutaten(rezept)
+            # Verarbeite Kategorieinformationen
+            rezept = verarbeite_kategorie_info(rezept)
+            
         return rezept
     except Exception as fehler:
         print(f"Fehler beim Abrufen des Rezepts: {fehler}")
@@ -144,9 +178,10 @@ def rezepte_auflisten(limit=10, offset=0, benutzer_id=None, kategorie_id=None):
         
         # Basis-SQL-Abfrage
         sql = """
-        SELECT r.*, b.name as benutzer_name
+        SELECT r.*, b.name as benutzer_name, k.name as kategorie_name
         FROM rezepte r
         JOIN benutzer b ON r.benutzer_id = b.id
+        LEFT JOIN kategorien k ON r.kategorie_id = k.id
         """
         
         # Filter hinzufügen
@@ -171,16 +206,93 @@ def rezepte_auflisten(limit=10, offset=0, benutzer_id=None, kategorie_id=None):
         cursor.execute(sql, parameter)
         rezepte = cursor.fetchall()
         
-        # Zutaten für jedes Rezept von JSON-String in Liste umwandeln
+        # Verarbeite alle Rezepte mit Hilfsfunktionen
         for rezept in rezepte:
-            try:
-                rezept['zutaten'] = json.loads(rezept['zutaten'])
-            except:
-                pass
-                
+            rezept = verarbeite_rezept_zutaten(rezept)
+            rezept = verarbeite_kategorie_info(rezept)
+        
         return rezepte
     except Exception as fehler:
         print(f"Fehler beim Auflisten der Rezepte: {fehler}")
+        return []
+    finally:
+        if cursor:
+            cursor.close()
+        if verbindung:
+            verbindung_schliessen(verbindung)
+
+def rezepte_auflisten_erweitert(limit=10, offset=0, benutzer_id=None, kategorie_id=None, sortierung='newest'):
+    """
+    Listet Rezepte mit erweiterten Informationen und Kategorien auf.
+    
+    @param {int} [limit=10] - Maximale Anzahl der zurückzugebenden Rezepte
+    @param {int} [offset=0] - Anzahl der zu überspringenden Rezepte
+    @param {int} [benutzer_id] - Filter für Rezepte eines bestimmten Benutzers
+    @param {int} [kategorie_id] - Filter für Rezepte einer bestimmten Kategorie
+    @param {string} [sortierung='newest'] - Sortierungsoption
+    
+    @return {Array<Object>} Liste von Rezept-Objekten mit Kategorie-Informationen
+    
+    @throws {Exception} Bei Datenbankfehlern
+    """
+    verbindung = None
+    cursor = None
+    try:
+        verbindung = verbinden()
+        if not verbindung:
+            return []
+            
+        cursor = verbindung.cursor(dictionary=True)
+        
+        # Basis-SQL-Abfrage mit Kategorie-Informationen
+        sql = """
+        SELECT r.*, b.name as benutzer_name, k.name as kategorie_name
+        FROM rezepte r
+        JOIN benutzer b ON r.benutzer_id = b.id
+        LEFT JOIN kategorien k ON r.kategorie_id = k.id
+        """
+        
+        # Filter hinzufügen
+        bedingungen = []
+        parameter = []
+        
+        if benutzer_id is not None:
+            bedingungen.append("r.benutzer_id = %s")
+            parameter.append(benutzer_id)
+            
+        if kategorie_id is not None:
+            bedingungen.append("r.kategorie_id = %s")
+            parameter.append(kategorie_id)
+            
+        if bedingungen:
+            sql += " WHERE " + " AND ".join(bedingungen)
+            
+        # Sortierung hinzufügen
+        if sortierung == 'oldest':
+            sql += " ORDER BY r.erstellungsdatum ASC"
+        elif sortierung == 'name_asc':
+            sql += " ORDER BY r.titel ASC"
+        elif sortierung == 'name_desc':
+            sql += " ORDER BY r.titel DESC"
+        else:  # newest (default)
+            sql += " ORDER BY r.erstellungsdatum DESC"
+            
+        # Paginierung nur hinzufügen wenn limit gesetzt ist
+        if limit is not None:
+            sql += " LIMIT %s OFFSET %s"
+            parameter.extend([limit, offset])
+        
+        cursor.execute(sql, parameter)
+        rezepte = cursor.fetchall()
+        
+        # Verarbeite alle Rezepte mit Hilfsfunktionen
+        for rezept in rezepte:
+            rezept = verarbeite_rezept_zutaten(rezept)
+            rezept = verarbeite_kategorie_info(rezept)
+        
+        return rezepte
+    except Exception as fehler:
+        print(f"Fehler beim Auflisten der Rezepte (erweitert): {fehler}")
         return []
     finally:
         if cursor:
@@ -335,9 +447,10 @@ def rezepte_suchen(suchbegriff, limit=10, offset=0, kategorie_id=None):
         # Basis-SQL-Abfrage
         count_sql = "SELECT COUNT(*) as anzahl FROM rezepte WHERE titel LIKE %s"
         sql = """
-        SELECT r.*, b.name as benutzer_name
+        SELECT r.*, b.name as benutzer_name, k.name as kategorie_name
         FROM rezepte r
         LEFT JOIN benutzer b ON r.benutzer_id = b.id
+        LEFT JOIN kategorien k ON r.kategorie_id = k.id
         WHERE r.titel LIKE %s
         """
         
@@ -363,18 +476,106 @@ def rezepte_suchen(suchbegriff, limit=10, offset=0, kategorie_id=None):
         cursor.execute(sql, params)
         rezepte = cursor.fetchall()
         
-        # Zutaten für jedes Rezept parsen
+        # Verarbeite alle Rezepte mit Hilfsfunktionen
         for rezept in rezepte:
-            if rezept['zutaten']:
-                try:
-                    rezept['zutaten'] = json.loads(rezept['zutaten'])
-                except:
-                    rezept['zutaten'] = []
+            rezept = verarbeite_rezept_zutaten(rezept)
+            rezept = verarbeite_kategorie_info(rezept)
         
         return rezepte, anzahl
         
     except Exception as fehler:
         print(f"Fehler beim Suchen von Rezepten: {fehler}")
+        return [], 0
+    finally:
+        if cursor:
+            cursor.close()
+        if verbindung:
+            verbindung_schliessen(verbindung)
+
+def rezepte_suchen_erweitert(suchbegriff, limit=10, offset=0, kategorie_id=None, sortierung='newest'):
+    """
+    Sucht nach Rezepten mit erweiterten Informationen und Kategorien.
+    
+    @param {string} suchbegriff - Der zu suchende Begriff
+    @param {int} [limit=10] - Maximale Anzahl der Ergebnisse
+    @param {int} [offset=0] - Anzahl der zu überspringenden Ergebnisse
+    @param {int} [kategorie_id] - Filter für eine bestimmte Kategorie
+    @param {string} [sortierung='newest'] - Sortierungsoption
+    
+    @return {tuple} (rezepte, gesamtanzahl)
+    @return {Array<Object>} return[0] - Liste der gefundenen Rezepte mit Kategorie-Informationen
+    @return {int} return[1] - Gesamtanzahl der gefundenen Rezepte
+    
+    @throws {Exception} Bei Datenbankfehlern
+    """
+    verbindung = None
+    cursor = None
+    try:
+        verbindung = verbinden()
+        if not verbindung:
+            return [], 0
+            
+        cursor = verbindung.cursor(dictionary=True)
+        
+        # Basis-SQL-Abfrage mit Kategorie-Informationen
+        count_sql = """
+        SELECT COUNT(*) as anzahl 
+        FROM rezepte r 
+        WHERE r.titel LIKE %s
+        """
+        
+        sql = """
+        SELECT r.*, b.name as benutzer_name, k.name as kategorie_name
+        FROM rezepte r
+        LEFT JOIN benutzer b ON r.benutzer_id = b.id
+        LEFT JOIN kategorien k ON r.kategorie_id = k.id
+        WHERE r.titel LIKE %s
+        """
+        
+        # Parameter für die Suche
+        such_param = f"%{suchbegriff}%"
+        params = [such_param]
+        
+        # Wenn eine Kategorie angegeben ist, füge sie zur Abfrage hinzu
+        if kategorie_id:
+            sql += " AND r.kategorie_id = %s"
+            count_sql += " AND kategorie_id = %s"
+            params.append(kategorie_id)
+        
+        # Sortierung hinzufügen
+        if sortierung == 'oldest':
+            sql += " ORDER BY r.erstellungsdatum ASC"
+        elif sortierung == 'name_asc':
+            sql += " ORDER BY r.titel ASC"
+        elif sortierung == 'name_desc':
+            sql += " ORDER BY r.titel DESC"
+        else:  # newest (default)
+            sql += " ORDER BY r.erstellungsdatum DESC"
+        
+        # Paginierung nur hinzufügen wenn limit gesetzt ist
+        if limit is not None:
+            sql += " LIMIT %s OFFSET %s"
+            params_with_pagination = params + [limit, offset]
+        else:
+            params_with_pagination = params
+        
+        # Gesamtanzahl der Ergebnisse ermitteln
+        cursor.execute(count_sql, params)
+        anzahl = cursor.fetchone()['anzahl']
+        
+        # Rezepte abrufen
+        cursor.execute(sql, params_with_pagination)
+        rezepte = cursor.fetchall()
+        
+        # Verarbeite alle Rezepte mit Hilfsfunktionen
+        for rezept in rezepte:
+            rezept = verarbeite_rezept_zutaten(rezept)
+            rezept = verarbeite_kategorie_info(rezept)
+        
+        return rezepte, anzahl
+        
+    except Exception as fehler:
+        print(f"Fehler beim Suchen von Rezepten (erweitert): {fehler}")
         return [], 0
     finally:
         if cursor:

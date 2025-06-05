@@ -23,15 +23,15 @@ export const addNotification = (message, type = 'info') => {
 /**
  * Layout-Komponente
  * Stellt das grundlegende Layout der Anwendung bereit
- * @param {Object} props - Component props
- * @param {React.ReactNode} props.children - Child components
- * @returns {JSX.Element} Layout component
+ * @param {Object} props - Komponenten-Eigenschaften
+ * @param {React.ReactNode} props.children - Untergeordnete Komponenten
+ * @returns {JSX.Element} Layout-Komponente
  */
 const Layout = ({ children }) => {
   return (
     <div className="app-container">
       <Header />
-      <main className="main-content">
+      <main className="main-content" style={{ paddingTop: '80px', minHeight: '100vh' }}>
         {children}
       </main>
       <Footer />

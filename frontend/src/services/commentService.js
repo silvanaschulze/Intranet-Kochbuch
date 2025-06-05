@@ -58,7 +58,7 @@ export const getComments = async (recipeId, page = 1, limit = 10, sortierung = '
     return response.data;
   } catch (error) {
     if (error.response?.status === 404) {
-      throw { message: 'Rezept nicht gefunden' };
+      throw new Error('Rezept nicht gefunden');
     }
     throw error.response?.data || error;
   }
@@ -82,7 +82,7 @@ export const addComment = async (recipeId, text) => {
   } catch (error) {
     if (error.field) throw error;
     if (error.response?.status === 404) {
-      throw { message: 'Rezept nicht gefunden' };
+      throw new Error('Rezept nicht gefunden');
     }
     throw error.response?.data || error;
   }
@@ -106,10 +106,10 @@ export const updateComment = async (commentId, text) => {
   } catch (error) {
     if (error.field) throw error;
     if (error.response?.status === 404) {
-      throw { message: 'Kommentar nicht gefunden' };
+      throw new Error('Kommentar nicht gefunden');
     }
     if (error.response?.status === 403) {
-      throw { message: 'Keine Berechtigung zum Bearbeiten dieses Kommentars' };
+      throw new Error('Keine Berechtigung zum Bearbeiten dieses Kommentars');
     }
     throw error.response?.data || error;
   }
@@ -126,10 +126,10 @@ export const deleteComment = async (commentId) => {
     await api.delete(`/api/kommentare/${commentId}`);
   } catch (error) {
     if (error.response?.status === 404) {
-      throw { message: 'Kommentar nicht gefunden' };
+      throw new Error('Kommentar nicht gefunden');
     }
     if (error.response?.status === 403) {
-      throw { message: 'Keine Berechtigung zum Löschen dieses Kommentars' };
+      throw new Error('Keine Berechtigung zum Löschen dieses Kommentars');
     }
     throw error.response?.data || error;
   }
@@ -154,7 +154,7 @@ export const reportComment = async (commentId, grund) => {
   } catch (error) {
     if (error.field) throw error;
     if (error.response?.status === 404) {
-      throw { message: 'Kommentar nicht gefunden' };
+      throw new Error('Kommentar nicht gefunden');
     }
     throw error.response?.data || error;
   }

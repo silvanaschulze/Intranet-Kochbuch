@@ -10,6 +10,7 @@ from .rezept_routes import rezept_bp
 from .kategorie_routes import kategorie_bp
 from .favorit_routes import favorit_bp
 from .kommentar_routes import kommentar_bp
+from .bewertung_routes import bewertung_bp
 
 __all__ = [
     'benutzer_bp',
@@ -17,4 +18,5 @@ __all__ = [
     'kategorie_routes',
     'favorit_bp',
     'kommentar_bp'
+     'bewertung_bp'
 ] 

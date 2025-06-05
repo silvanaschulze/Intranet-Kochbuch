@@ -15,6 +15,7 @@ import { validateRecipeForm, isFormValid } from './RecipeFormValidation';
  * @typedef {Object} Zutat
  * @property {string} name - Name der Zutat
  * @property {string} menge - Menge der Zutat
+ * @property {string} einheit - Einheit der Zutat
  */
 
 /**
@@ -37,10 +38,10 @@ import { validateRecipeForm, isFormValid } from './RecipeFormValidation';
  * @param {Function} props.onCancel - Callback-Funktion beim Abbrechen
  * @returns {JSX.Element} Die gerenderte RecipeForm Komponente
  */
-const RecipeForm = ({ initialData, isEditing = false, onSubmit, onCancel }) => {
+const RecipeForm = ({ initialData, isEditing = false, onSubmit, onCancel = () => {} }) => {
   const defaultFormData = {
     titel: '',
-    zutaten: [{ name: '', menge: '' }],
+    zutaten: [{ name: '', menge: '', einheit: '' }],
     zubereitung: '',
     kategorie_id: '',
     bild: null
@@ -179,7 +180,8 @@ RecipeForm.propTypes = {
     zutaten: PropTypes.arrayOf(
       PropTypes.shape({
         name: PropTypes.string,
-        menge: PropTypes.string
+        menge: PropTypes.string,
+        einheit: PropTypes.string
       })
     ),
     zubereitung: PropTypes.string,
@@ -189,7 +191,7 @@ RecipeForm.propTypes = {
   }),
   isEditing: PropTypes.bool,
   onSubmit: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired
+  onCancel: PropTypes.func
 };
 
 export default RecipeForm;

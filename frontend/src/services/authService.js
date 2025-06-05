@@ -34,16 +34,24 @@ import api from './api';
  */
 const validateLoginInput = (email, password) => {
   if (!email) {
-    throw { message: 'E-Mail-Adresse ist erforderlich', field: 'email' };
+    const error = new Error('E-Mail-Adresse ist erforderlich');
+    error.field = 'email';
+    throw error;
   }
   if (!email.includes('@')) {
-    throw { message: 'Ungültige E-Mail-Adresse', field: 'email' };
+    const error = new Error('Ungültige E-Mail-Adresse');
+    error.field = 'email';
+    throw error;
   }
   if (!password) {
-    throw { message: 'Passwort ist erforderlich', field: 'password' };
+    const error = new Error('Passwort ist erforderlich');
+    error.field = 'password';
+    throw error;
   }
   if (password.length < 8) {
-    throw { message: 'Das Passwort muss mindestens 8 Zeichen lang sein', field: 'password' };
+    const error = new Error('Das Passwort muss mindestens 8 Zeichen lang sein');
+    error.field = 'password';
+    throw error;
   }
 };
 
@@ -65,7 +73,7 @@ export const login = async (email, password) => {
     });
     
     if (!response.data?.token || !response.data?.benutzer) {
-      throw { message: 'Ungültige Serverantwort' };
+      throw new Error('Ungültige Serverantwort');
     }
 
     // Token und Benutzer im localStorage speichern
@@ -80,9 +88,9 @@ export const login = async (email, password) => {
 
     if (error.field) throw error;
     if (error.response?.data?.message) {
-      throw { message: error.response.data.message };
+      throw new Error(error.response.data.message);
     }
-    throw { message: 'Ein unerwarteter Fehler ist aufgetreten' };
+    throw new Error('Ein unerwarteter Fehler ist aufgetreten');
   }
 };
 
@@ -95,28 +103,39 @@ export const login = async (email, password) => {
  */
 const validateRegisterInput = (name, email, password) => {
   if (!name) {
-    throw { message: 'Name ist erforderlich', field: 'name' };
+    const error = new Error('Name ist erforderlich');
+    error.field = 'name';
+    throw error;
   }
   if (name.length < 2) {
-    throw { message: 'Der Name muss mindestens 2 Zeichen lang sein', field: 'name' };
+    const error = new Error('Der Name muss mindestens 2 Zeichen lang sein');
+    error.field = 'name';
+    throw error;
   }
   if (!email) {
-    throw { message: 'E-Mail-Adresse ist erforderlich', field: 'email' };
+    const error = new Error('E-Mail-Adresse ist erforderlich');
+    error.field = 'email';
+    throw error;
   }
   if (!email.includes('@')) {
-    throw { message: 'Ungültige E-Mail-Adresse', field: 'email' };
+    const error = new Error('Ungültige E-Mail-Adresse');
+    error.field = 'email';
+    throw error;
   }
   if (!password) {
-    throw { message: 'Passwort ist erforderlich', field: 'password' };
+    const error = new Error('Passwort ist erforderlich');
+    error.field = 'password';
+    throw error;
   }
   if (password.length < 8) {
-    throw { message: 'Das Passwort muss mindestens 8 Zeichen lang sein', field: 'password' };
+    const error = new Error('Das Passwort muss mindestens 8 Zeichen lang sein');
+    error.field = 'password';
+    throw error;
   }
   if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-    throw {
-      message: 'Das Passwort muss mindestens einen Großbuchstaben, einen Kleinbuchstaben und eine Zahl enthalten',
-      field: 'password'
-    };
+    const error = new Error('Das Passwort muss mindestens einen Großbuchstaben, einen Kleinbuchstaben und eine Zahl enthalten');
+    error.field = 'password';
+    throw error;
   }
 };
 
@@ -140,7 +159,7 @@ export const register = async (name, email, password) => {
     });
 
     if (!response.data?.token || !response.data?.benutzer) {
-      throw { message: 'Ungültige Serverantwort' };
+      throw new Error('Ungültige Serverantwort');
     }
 
     // Nach erfolgreicher Registrierung automatisch einloggen
@@ -151,9 +170,9 @@ export const register = async (name, email, password) => {
   } catch (error) {
     if (error.field) throw error;
     if (error.response?.data?.message) {
-      throw { message: error.response.data.message };
+      throw new Error(error.response.data.message);
     }
-    throw { message: 'Ein unerwarteter Fehler ist aufgetreten' };
+    throw new Error('Ein unerwarteter Fehler ist aufgetreten');
   }
 };
 
@@ -171,23 +190,26 @@ export const updateProfile = async (userData) => {
   try {
     if (userData.new_password) {
       if (!userData.current_password) {
-        throw { message: 'Aktuelles Passwort ist erforderlich', field: 'current_password' };
+        const error = new Error('Aktuelles Passwort ist erforderlich');
+        error.field = 'current_password';
+        throw error;
       }
       if (userData.new_password.length < 8) {
-        throw { message: 'Das neue Passwort muss mindestens 8 Zeichen lang sein', field: 'new_password' };
+        const error = new Error('Das neue Passwort muss mindestens 8 Zeichen lang sein');
+        error.field = 'new_password';
+        throw error;
       }
       if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(userData.new_password)) {
-        throw {
-          message: 'Das neue Passwort muss mindestens einen Großbuchstaben, einen Kleinbuchstaben und eine Zahl enthalten',
-          field: 'new_password'
-        };
+        const error = new Error('Das neue Passwort muss mindestens einen Großbuchstaben, einen Kleinbuchstaben und eine Zahl enthalten');
+        error.field = 'new_password';
+        throw error;
       }
     }
 
     const response = await api.put('/api/benutzer/profil', userData);
 
     if (!response.data) {
-      throw { message: 'Fehler beim Aktualisieren des Profils' };
+      throw new Error('Fehler beim Aktualisieren des Profils');
     }
 
     // Aktualisierte Benutzerdaten im localStorage speichern
@@ -199,9 +221,9 @@ export const updateProfile = async (userData) => {
   } catch (error) {
     if (error.field) throw error;
     if (error.response?.data?.message) {
-      throw { message: error.response.data.message };
+      throw new Error(error.response.data.message);
     }
-    throw { message: 'Ein unerwarteter Fehler ist aufgetreten' };
+    throw new Error('Ein unerwarteter Fehler ist aufgetreten');
   }
 };
 
@@ -214,13 +236,13 @@ export const updateProfile = async (userData) => {
 export const getUserProfile = async () => {
   try {
     if (!isAuthenticated()) {
-      throw { message: 'Benutzer nicht authentifiziert' };
+      throw new Error('Benutzer nicht authentifiziert');
     }
 
     const response = await api.get('/api/benutzer/profil');
     
     if (!response.data) {
-      throw { message: 'Fehler beim Laden des Benutzerprofils' };
+      throw new Error('Fehler beim Laden des Benutzerprofils');
     }
 
     // Benutzerdaten im localStorage aktualisieren
@@ -229,9 +251,42 @@ export const getUserProfile = async () => {
     return response.data;
   } catch (error) {
     if (error.response?.data?.message) {
-      throw { message: error.response.data.message };
+      throw new Error(error.response.data.message);
     }
-    throw { message: 'Ein unerwarteter Fehler ist aufgetreten' };
+    throw new Error('Ein unerwarteter Fehler ist aufgetreten');
+  }
+};
+
+/**
+ * Lädt aktualisierte Benutzerstatistiken vom Server
+ * @async
+ * @returns {Promise<Object>} Aktualisierte Statistiken
+ * @throws {AuthError} Bei fehlender Authentifizierung oder Netzwerkfehlern
+ */
+export const getUserStatistics = async () => {
+  try {
+    if (!isAuthenticated()) {
+      throw new Error('Benutzer nicht authentifiziert');
+    }
+
+    const response = await api.get('/api/benutzer/profil');
+    
+    if (!response.data) {
+      throw new Error('Fehler beim Laden der Benutzerstatistiken');
+    }
+
+    return {
+      favorites_count: response.data.favorites_count || 0,
+      recipes_count: response.data.recipes_count || 0,
+      last_login: response.data.last_login
+    };
+  } catch (error) {
+    console.error('Fehler beim Laden der Benutzerstatistiken:', error);
+    return {
+      favorites_count: 0,
+      recipes_count: 0,
+      last_login: null
+    };
   }
 };
 
@@ -282,10 +337,14 @@ export const logout = async () => {
  */
 const validateResetEmail = (email) => {
   if (!email) {
-    throw { message: 'E-Mail-Adresse ist erforderlich', field: 'email' };
+    const error = new Error('E-Mail-Adresse ist erforderlich');
+    error.field = 'email';
+    throw error;
   }
   if (!email.includes('@')) {
-    throw { message: 'Ungültige E-Mail-Adresse', field: 'email' };
+    const error = new Error('Ungültige E-Mail-Adresse');
+    error.field = 'email';
+    throw error;
   }
 };
 
@@ -296,16 +355,19 @@ const validateResetEmail = (email) => {
  */
 const validateNewPassword = (password) => {
   if (!password) {
-    throw { message: 'Passwort ist erforderlich', field: 'password' };
+    const error = new Error('Passwort ist erforderlich');
+    error.field = 'password';
+    throw error;
   }
   if (password.length < 8) {
-    throw { message: 'Das Passwort muss mindestens 8 Zeichen lang sein', field: 'password' };
+    const error = new Error('Das Passwort muss mindestens 8 Zeichen lang sein');
+    error.field = 'password';
+    throw error;
   }
   if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-    throw {
-      message: 'Das Passwort muss mindestens einen Großbuchstaben, einen Kleinbuchstaben und eine Zahl enthalten',
-      field: 'password'
-    };
+    const error = new Error('Das Passwort muss mindestens einen Großbuchstaben, einen Kleinbuchstaben und eine Zahl enthalten');
+    error.field = 'password';
+    throw error;
   }
 };
 
@@ -323,14 +385,14 @@ export const requestPasswordReset = async (email) => {
     const response = await api.post('/api/benutzer/passwort-vergessen', { email });
 
     if (!response.data?.success) {
-      throw { message: 'Fehler beim Senden des Reset-Links' };
+      throw new Error('Fehler beim Senden des Reset-Links');
     }
   } catch (error) {
     if (error.field) throw error;
     if (error.response?.data?.message) {
-      throw { message: error.response.data.message };
+      throw new Error(error.response.data.message);
     }
-    throw { message: 'Ein unerwarteter Fehler ist aufgetreten' };
+    throw new Error('Ein unerwarteter Fehler ist aufgetreten');
   }
 };
 
@@ -344,7 +406,7 @@ export const requestPasswordReset = async (email) => {
 export const validateResetToken = async (token) => {
   try {
     if (!token) {
-      throw { message: 'Token ist erforderlich' };
+      throw new Error('Token ist erforderlich');
     }
 
     const response = await api.get(`/api/benutzer/passwort-reset/${token}/validieren`);
@@ -352,9 +414,9 @@ export const validateResetToken = async (token) => {
     return response.data?.valid === true;
   } catch (error) {
     if (error.response?.data?.message) {
-      throw { message: error.response.data.message };
+      throw new Error(error.response.data.message);
     }
-    throw { message: 'Ein unerwarteter Fehler ist aufgetreten' };
+    throw new Error('Ein unerwarteter Fehler ist aufgetreten');
   }
 };
 
@@ -369,7 +431,7 @@ export const validateResetToken = async (token) => {
 export const resetPassword = async (token, newPassword) => {
   try {
     if (!token) {
-      throw { message: 'Token ist erforderlich' };
+      throw new Error('Token ist erforderlich');
     }
 
     validateNewPassword(newPassword);
@@ -379,13 +441,13 @@ export const resetPassword = async (token, newPassword) => {
     });
 
     if (!response.data?.success) {
-      throw { message: 'Fehler beim Zurücksetzen des Passworts' };
+      throw new Error('Fehler beim Zurücksetzen des Passworts');
     }
   } catch (error) {
     if (error.field) throw error;
     if (error.response?.data?.message) {
-      throw { message: error.response.data.message };
+      throw new Error(error.response.data.message);
     }
-    throw { message: 'Ein unerwarteter Fehler ist aufgetreten' };
+    throw new Error('Ein unerwarteter Fehler ist aufgetreten');
   }
 };

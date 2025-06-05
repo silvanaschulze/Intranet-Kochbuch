@@ -44,208 +44,119 @@ import api from './api';
  */
 
 /**
- * Validiert die Rezeptdaten
- * @param {Rezept} recipe - Zu validierende Rezeptdaten
- * @throws {Error} Bei ungültigen Daten
- */
-const validateRecipe = (recipe) => {
-  if (!recipe.titel?.trim()) {
-    throw { message: 'Titel ist erforderlich', field: 'titel' };
-  }
-  if (recipe.titel.length < 3) {
-    throw { message: 'Titel muss mindestens 3 Zeichen lang sein', field: 'titel' };
-  }
-  if (!recipe.zutaten?.length) {
-    throw { message: 'Mindestens eine Zutat ist erforderlich', field: 'zutaten' };
-  }
-  if (!recipe.zubereitung?.trim()) {
-    throw { message: 'Zubereitung ist erforderlich', field: 'zubereitung' };
-  }
-  if (!recipe.zubereitungszeit?.trim()) {
-    throw { message: 'Zubereitungszeit ist erforderlich', field: 'zubereitungszeit' };
-  }
-  if (!recipe.schwierigkeitsgrad?.trim()) {
-    throw { message: 'Schwierigkeitsgrad ist erforderlich', field: 'schwierigkeitsgrad' };
-  }
-};
-
-/**
- * Ruft eine Liste von Rezepten ab
- * @async
- * @param {number} [page=1] - Aktuelle Seite
+ * Lädt alle Rezepte mit Paginierung und Filterung
+ * @param {number} [page=1] - Seitennummer
  * @param {number} [limit=10] - Anzahl der Rezepte pro Seite
- * @param {string} [kategorie=''] - Kategorie-ID für Filterung
- * @param {string} [sortierung='newest'] - Sortierungsoption
- * @returns {Promise<RezeptListe>} Liste der Rezepte mit Paginierungsinformationen
+ * @param {string} [category=''] - Kategorie-Filter
+ * @param {string} [sort='newest'] - Sortierungsoption
+ * @returns {Promise<Object>} Liste der Rezepte mit Metadaten
  */
-export const getRecipes = async (page = 1, limit = 10, kategorie = '', sortierung = 'newest') => {
+export const getRecipes = async (page = 1, limit = 10, category = '', sort = 'newest') => {
   try {
+    console.log('🔍 getRecipes aufgerufen mit:', { page, limit, category, sort });
+    
     const response = await api.get('/api/rezepte', {
-      params: { page, limit, kategorie, sortierung }
+      params: {
+        page,
+        limit,
+        kategorie: category,
+        sortierung: sort
+      }
     });
+    
+    console.log('✅ Rezept-Antwort:', response.data);
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    console.error('Fehler beim Laden der Rezepte:', error);
+    throw error;
   }
 };
 
 /**
  * Sucht nach Rezepten
- * @async
  * @param {string} searchTerm - Suchbegriff
- * @param {string} [kategorie=''] - Kategorie-ID für Filterung
- * @param {string} [sortierung='newest'] - Sortierungsoption
- * @param {number} [page=1] - Aktuelle Seite
+ * @param {string} [category=''] - Kategorie-Filter
+ * @param {string} [sort='newest'] - Sortierungsoption
+ * @param {number} [page=1] - Seitennummer
  * @param {number} [limit=10] - Anzahl der Rezepte pro Seite
- * @returns {Promise<RezeptListe>} Liste der gefundenen Rezepte
+ * @returns {Promise<Object>} Suchergebnisse
  */
-export const searchRecipes = async (searchTerm, kategorie = '', sortierung = 'newest', page = 1, limit = 10) => {
+export const searchRecipes = async (searchTerm, category = '', sort = 'newest', page = 1, limit = 10) => {
   try {
     const response = await api.get('/api/rezepte/suche', {
       params: {
         q: searchTerm,
-        kategorie,
-        sortierung,
+        kategorie: category,
+        sortierung: sort,
         page,
         limit
       }
     });
+    
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    console.error('Fehler bei der Rezeptsuche:', error);
+    throw error;
   }
 };
 
 /**
- * Ruft ein einzelnes Rezept ab
- * @async
- * @param {string} id - ID des Rezepts
- * @returns {Promise<Rezept>} Das abgerufene Rezept
+ * Lädt ein einzelnes Rezept
+ * @param {number} id - ID des Rezepts
+ * @returns {Promise<Object>} Rezeptdetails
  */
 export const getRecipe = async (id) => {
   try {
     const response = await api.get(`/api/rezepte/${id}`);
     return response.data;
   } catch (error) {
-    if (error.response?.status === 404) {
-      throw { message: 'Rezept nicht gefunden' };
-    }
-    throw error.response?.data || error;
+    console.error('Fehler beim Laden des Rezepts:', error);
+    throw error;
   }
 };
 
 /**
  * Erstellt ein neues Rezept
- * @async
- * @param {Rezept} recipeData - Daten des neuen Rezepts
- * @returns {Promise<Rezept>} Das erstellte Rezept
+ * @param {Object} recipeData - Rezeptdaten
+ * @returns {Promise<Object>} Erstelltes Rezept
  */
 export const createRecipe = async (recipeData) => {
   try {
-    validateRecipe(recipeData);
-
-    const formData = new FormData();
-    
-    // Textfelder hinzufügen
-    formData.append('titel', recipeData.titel.trim());
-    formData.append('zubereitung', recipeData.zubereitung.trim());
-    formData.append('zubereitungszeit', recipeData.zubereitungszeit.trim());
-    formData.append('schwierigkeitsgrad', recipeData.schwierigkeitsgrad);
-    
-    // Zutaten bereinigen und als JSON-String hinzufügen
-    const cleanedIngredients = recipeData.zutaten.map(zutat => ({
-      name: zutat.name.trim(),
-      menge: zutat.menge.trim(),
-      einheit: zutat.einheit.trim()
-    }));
-    formData.append('zutaten', JSON.stringify(cleanedIngredients));
-    
-    // Kategorien hinzufügen, falls vorhanden
-    if (recipeData.kategorien?.length) {
-      formData.append('kategorien', JSON.stringify(recipeData.kategorien));
-    }
-    
-    // Bild hinzufügen, falls vorhanden
-    if (recipeData.bild) {
-      formData.append('bild', recipeData.bild);
-    }
-    
-    const response = await api.post('/api/rezepte', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-    
+    const response = await api.post('/api/rezepte', recipeData);
     return response.data;
   } catch (error) {
-    if (error.field) throw error;
-    throw error.response?.data || error;
+    console.error('Fehler beim Erstellen des Rezepts:', error);
+    throw error;
   }
 };
 
 /**
  * Aktualisiert ein bestehendes Rezept
- * @async
- * @param {string} id - ID des zu aktualisierenden Rezepts
- * @param {Rezept} recipeData - Neue Daten des Rezepts
- * @returns {Promise<Rezept>} Das aktualisierte Rezept
+ * @param {number} id - ID des Rezepts
+ * @param {Object} recipeData - Aktualisierte Rezeptdaten
+ * @returns {Promise<Object>} Aktualisiertes Rezept
  */
 export const updateRecipe = async (id, recipeData) => {
   try {
-    validateRecipe(recipeData);
-
-    const formData = new FormData();
-    
-    formData.append('titel', recipeData.titel.trim());
-    formData.append('zubereitung', recipeData.zubereitung.trim());
-    formData.append('zubereitungszeit', recipeData.zubereitungszeit.trim());
-    formData.append('schwierigkeitsgrad', recipeData.schwierigkeitsgrad);
-    
-    const cleanedIngredients = recipeData.zutaten.map(zutat => ({
-      name: zutat.name.trim(),
-      menge: zutat.menge.trim(),
-      einheit: zutat.einheit.trim()
-    }));
-    formData.append('zutaten', JSON.stringify(cleanedIngredients));
-    
-    if (recipeData.kategorien?.length) {
-      formData.append('kategorien', JSON.stringify(recipeData.kategorien));
-    }
-    
-    if (recipeData.bild) {
-      formData.append('bild', recipeData.bild);
-    }
-    
-    const response = await api.put(`/api/rezepte/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-    
+    const response = await api.put(`/api/rezepte/${id}`, recipeData);
     return response.data;
   } catch (error) {
-    if (error.field) throw error;
-    if (error.response?.status === 404) {
-      throw { message: 'Rezept nicht gefunden' };
-    }
-    throw error.response?.data || error;
+    console.error('Fehler beim Aktualisieren des Rezepts:', error);
+    throw error;
   }
 };
 
 /**
  * Löscht ein Rezept
- * @async
- * @param {string} id - ID des zu löschenden Rezepts
+ * @param {number} id - ID des Rezepts
  * @returns {Promise<void>}
  */
 export const deleteRecipe = async (id) => {
   try {
     await api.delete(`/api/rezepte/${id}`);
   } catch (error) {
-    if (error.response?.status === 404) {
-      throw { message: 'Rezept nicht gefunden' };
-    }
-    throw error.response?.data || error;
+    console.error('Fehler beim Löschen des Rezepts:', error);
+    throw error;
   }
 };
 

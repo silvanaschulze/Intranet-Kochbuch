@@ -1,10 +1,14 @@
+/**
+ * @fileoverview Komponente zur Anzeige der Favoritenliste des Benutzers
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Alert } from 'react-bootstrap';
 import api from '../../services/api';
 import RecipeCard from './RecipeCard';
 
 /**
- * Componente para exibir a lista de receitas favoritas do usuário
+ * Komponente zur Anzeige der Liste der favorisierten Rezepte des Benutzers
  * @component
  */
 const FavoritesList = () => {
@@ -23,8 +27,8 @@ const FavoritesList = () => {
       setFavorites(response.data.favoriten || []);
       setError(null);
     } catch (error) {
-      console.error('Erro ao carregar favoritos:', error);
-      setError('Não foi possível carregar suas receitas favoritas. Por favor, tente novamente mais tarde.');
+      console.error('Fehler beim Laden der Favoriten:', error);
+      setError('Ihre Lieblings-Rezepte konnten nicht geladen werden. Bitte versuchen Sie es später erneut.');
     } finally {
       setLoading(false);
     }
@@ -35,7 +39,7 @@ const FavoritesList = () => {
       <Container>
         <div className="text-center py-4">
           <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Carregando...</span>
+            <span className="visually-hidden">Wird geladen...</span>
           </div>
         </div>
       </Container>
@@ -56,7 +60,7 @@ const FavoritesList = () => {
     return (
       <Container>
         <Alert variant="info" className="my-3">
-          Você ainda não tem receitas favoritas. Explore nossas receitas e adicione algumas aos seus favoritos!
+          Sie haben noch keine Lieblings-Rezepte. Entdecken Sie unsere Rezepte und fügen Sie einige zu Ihren Favoriten hinzu!
         </Alert>
       </Container>
     );
@@ -64,7 +68,7 @@ const FavoritesList = () => {
 
   return (
     <Container>
-      <h2 className="mb-4">Minhas Receitas Favoritas</h2>
+      <h2 className="mb-4">Meine Lieblings-Rezepte</h2>
       <Row xs={1} md={2} lg={3} className="g-4">
         {favorites.map(recipe => (
           <Col key={recipe.id}>

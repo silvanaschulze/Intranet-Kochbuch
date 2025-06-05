@@ -55,7 +55,10 @@ def benutzer_registrieren(name, email, passwort):
         return benutzer
     except Exception as fehler:
         print(f"Fehler beim Registrieren des Benutzers: {fehler}")
-        return None
+        # Verificar se é erro de email duplicado
+        if "Duplicate entry" in str(fehler) and "email" in str(fehler):
+            raise ValueError("Diese E-Mail-Adresse ist bereits registriert.")
+        raise fehler
     finally:
         if cursor:
             cursor.close()
@@ -109,10 +112,10 @@ def benutzer_anmelden(email, passwort):
 
 def benutzer_profil_abrufen(benutzer_id):
     """
-    Ruft die Profildaten eines Benutzers ab.
+    Ruft die Profildaten eines Benutzers ab mit Statistiken.
     
     @param {int} benutzer_id - ID des Benutzers
-    @return {dict|None} Benutzerprofildaten oder None bei Fehler
+    @return {dict|None} Benutzerprofildaten mit Statistiken oder None bei Fehler
     """
     verbindung = None
     cursor = None
@@ -122,6 +125,8 @@ def benutzer_profil_abrufen(benutzer_id):
             return None
 
         cursor = verbindung.cursor(dictionary=True)
+        
+        # Grundlegende Profildaten abrufen
         sql = """
             SELECT id, name, email, profilbild_url, beschreibung
             FROM benutzer 
@@ -129,6 +134,30 @@ def benutzer_profil_abrufen(benutzer_id):
         """
         cursor.execute(sql, (benutzer_id,))
         profil = cursor.fetchone()
+        
+        if profil:
+            # Anzahl der Favoriten des Benutzers
+            sql_favoriten = """
+                SELECT COUNT(*) as favorites_count
+                FROM favoriten 
+                WHERE benutzer_id = %s
+            """
+            cursor.execute(sql_favoriten, (benutzer_id,))
+            favoriten_result = cursor.fetchone()
+            profil['favorites_count'] = favoriten_result['favorites_count'] if favoriten_result else 0
+            
+            # Anzahl der erstellten Rezepte des Benutzers
+            sql_rezepte = """
+                SELECT COUNT(*) as recipes_count
+                FROM rezepte 
+                WHERE benutzer_id = %s
+            """
+            cursor.execute(sql_rezepte, (benutzer_id,))
+            rezepte_result = cursor.fetchone()
+            profil['recipes_count'] = rezepte_result['recipes_count'] if rezepte_result else 0
+            
+            # Letzter Login (kann später implementiert werden)
+            profil['last_login'] = None
         
         return profil
     except Exception as fehler:
@@ -207,28 +236,68 @@ def profilbild_speichern(benutzer_id, bild_datei):
     verbindung = None
     cursor = None
     try:
+        print(f"🔄 Speichere Profilbild für Benutzer {benutzer_id}")
+        
         # Sicherer Dateiname erstellen
         original_filename = secure_filename(bild_datei.filename)
         extension = original_filename.rsplit('.', 1)[1].lower()
         filename = f"profile_{benutzer_id}.{extension}"
+        
+        print(f"📁 Ursprünglicher Name: {original_filename}")
+        print(f"📁 Neuer Name: {filename}")
         
         # Pfad zum Speichern
         upload_folder = os.path.join('static', 'profile_images')
         os.makedirs(upload_folder, exist_ok=True)
         filepath = os.path.join(upload_folder, filename)
         
-        # Bild speichern und optimieren
+        print(f"💾 Speicherpfad: {filepath}")
+        
+        # Bild speichern
         bild_datei.save(filepath)
-        with Image.open(filepath) as img:
-            # Auf 500x500 Pixel beschränken
-            img.thumbnail((500, 500))
-            # Als JPEG mit guter Qualität speichern
-            img = img.convert('RGB')
-            img.save(filepath, 'JPEG', quality=85)
+        print(f"✅ Datei gespeichert")
+        
+        # Bildoptimierung nur für unterstützte Formate
+        try:
+            with Image.open(filepath) as img:
+                print(f"🖼️  Original Format: {img.format}, Größe: {img.size}")
+                
+                # Auf 500x500 Pixel beschränken
+                if img.width > 500 or img.height > 500:
+                    img.thumbnail((500, 500), Image.Resampling.LANCZOS)
+                    print(f"📏 Größe angepasst auf: {img.size}")
+                
+                # Für AVIF und WebP: Beibehalten des Formats wenn möglich
+                if extension in ['avif', 'webp']:
+                    try:
+                        img.save(filepath, format=img.format, quality=85, optimize=True)
+                        print(f"✅ Optimiert als {img.format}")
+                    except Exception as e:
+                        print(f"⚠️  Konvertiere zu JPEG: {e}")
+                        # Fallback zu JPEG
+                        img = img.convert('RGB')
+                        jpeg_filename = f"profile_{benutzer_id}.jpg"
+                        jpeg_filepath = os.path.join(upload_folder, jpeg_filename)
+                        img.save(jpeg_filepath, 'JPEG', quality=85)
+                        # Alte Datei löschen
+                        os.remove(filepath)
+                        filename = jpeg_filename
+                        filepath = jpeg_filepath
+                else:
+                    # Für andere Formate: Als JPEG speichern
+                    img = img.convert('RGB')
+                    img.save(filepath, 'JPEG', quality=85)
+                    print(f"✅ Konvertiert zu JPEG")
+                    
+        except Exception as img_error:
+            print(f"⚠️  Bildverarbeitung fehlgeschlagen: {img_error}")
+            # Datei trotzdem behalten, falls sie verwendbar ist
         
         # URL in der Datenbank speichern
+        print(f"💽 Speichere URL in Datenbank...")
         verbindung = verbinden()
         if not verbindung:
+            print(f"❌ Datenbankverbindung fehlgeschlagen")
             return None
 
         cursor = verbindung.cursor()
@@ -237,9 +306,13 @@ def profilbild_speichern(benutzer_id, bild_datei):
         cursor.execute(sql, (bild_url, benutzer_id))
         verbindung.commit()
         
+        print(f"✅ Profilbild erfolgreich gespeichert: {bild_url}")
         return bild_url
+        
     except Exception as fehler:
-        print(f"Fehler beim Speichern des Profilbilds: {fehler}")
+        print(f"❌ Fehler beim Speichern des Profilbilds: {fehler}")
+        import traceback
+        traceback.print_exc()
         return None
     finally:
         if cursor:

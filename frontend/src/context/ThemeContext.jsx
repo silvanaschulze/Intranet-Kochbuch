@@ -22,9 +22,9 @@ export const useTheme = () => {
 /**
  * Theme Provider Komponente
  * Verwaltet den Theme-Status und speichert ihn im localStorage
- * @param {Object} props - Component props
- * @param {React.ReactNode} props.children - Child components
- * @returns {JSX.Element} ThemeProvider component
+ * @param {Object} props - Komponenten-Eigenschaften
+ * @param {React.ReactNode} props.children - Untergeordnete Komponenten
+ * @returns {JSX.Element} ThemeProvider-Komponente
  */
 export const ThemeProvider = ({ children }) => {
   // Theme aus localStorage laden oder Standard (light) verwenden

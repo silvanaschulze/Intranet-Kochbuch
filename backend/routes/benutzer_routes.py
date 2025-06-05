@@ -62,34 +62,40 @@ def register():
     passwort = daten.get("passwort")
 
     if not name or len(name) < 3:
-        return jsonify({"fehler": "Name muss mindestens 3 Zeichen haben."}), 400
+        return jsonify({"message": "Name muss mindestens 3 Zeichen haben."}), 400
 
     if not email or not email_validieren(email):
-        return jsonify({"fehler": "Ungültige E-Mail-Adresse."}), 400
+        return jsonify({"message": "Ungültige E-Mail-Adresse."}), 400
 
     if not passwort or not passwort_validieren(passwort):
-        return jsonify({"fehler": "Passwort muss mindestens 8 Zeichen, einen Großbuchstaben, eine Zahl und ein Sonderzeichen enthalten."}), 400
+        return jsonify({"message": "Passwort muss mindestens 8 Zeichen, einen Großbuchstaben, eine Zahl und ein Sonderzeichen enthalten."}), 400
 
-    benutzer = benutzer_registrieren(name, email, passwort)
-    if benutzer:
-        # Remove o hash da senha antes de enviar
-        benutzer_daten = {
-            'id': benutzer['id'],
-            'name': benutzer['name'],
-            'email': benutzer['email']
-        }
-        access_token, refresh_token = generate_tokens(benutzer['id'], benutzer['email'])
-        
-        # E-Mail mit Registrierungsbestätigung senden
-        registrierungs_email_senden(email, name)
-        
-        return jsonify({
-            "nachricht": "Benutzer erfolgreich registriert. Eine Bestätigungs-E-Mail wurde an Sie gesendet.",
-            "token": access_token,
-            "benutzer": benutzer_daten
-        }), 201
-    else:
-        return jsonify({"fehler": "Registrierung fehlgeschlagen."}), 500
+    try:
+        benutzer = benutzer_registrieren(name, email, passwort)
+        if benutzer:
+            # Remove o hash da senha antes de enviar
+            benutzer_daten = {
+                'id': benutzer['id'],
+                'name': benutzer['name'],
+                'email': benutzer['email']
+            }
+            access_token, refresh_token = generate_tokens(benutzer['id'], benutzer['email'])
+            
+            # E-Mail mit Registrierungsbestätigung senden
+            registrierungs_email_senden(email, name)
+            
+            return jsonify({
+                "message": "Benutzer erfolgreich registriert. Eine Bestätigungs-E-Mail wurde an Sie gesendet.",
+                "token": access_token,
+                "benutzer": benutzer_daten
+            }), 201
+        else:
+            return jsonify({"message": "Registrierung fehlgeschlagen."}), 500
+    except ValueError as ve:
+        return jsonify({"message": str(ve)}), 400
+    except Exception as e:
+        print(f"Unerwarteter Fehler bei der Registrierung: {e}")
+        return jsonify({"message": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut."}), 500
 
 @benutzer_bp.route("/login", methods=["POST"])
 def login():
@@ -104,10 +110,9 @@ def login():
     
     @return {Object} response
     @return {string} response.nachricht - Erfolgsmeldung
-    @return {string} response.access_token - JWT Access Token
-    @return {string} response.refresh_token - JWT Refresh Token
+    @return {string} response.token - JWT Access Token
     @return {Object} response.benutzer - Benutzerdaten
-    @return {string} [response.fehler] - Fehlermeldung bei Misserfolg
+    @return {string} [response.message] - Fehlermeldung bei Misserfolg
     
     @throws {400} - Bei fehlenden Anmeldedaten
     @throws {401} - Bei ungültigen Anmeldedaten
@@ -117,26 +122,32 @@ def login():
     passwort = daten.get("passwort")
 
     if not email or not passwort:
-        return jsonify({"fehler": "E-Mail und Passwort sind erforderlich."}), 400
+        return jsonify({"message": "E-Mail und Passwort sind erforderlich."}), 400
 
     benutzer = benutzer_anmelden(email, passwort)
 
     if benutzer:
-        # Remove o hash da senha antes de enviar
+        print(f"🔄 Login erfolgreich für Benutzer: {benutzer}")
+        
+        # Benutzerdaten für Frontend vorbereiten (inklusive Profilbild)
         benutzer_daten = {
             'id': benutzer['id'],
             'name': benutzer['name'],
-            'email': benutzer['email']
+            'email': benutzer['email'],
+            'profilbild': benutzer.get('profilbild_url'),  # Profilbild URL hinzufügen
+            'beschreibung': benutzer.get('beschreibung')
         }
+        
+        print(f"✅ Benutzer-Daten für Frontend: {benutzer_daten}")
+        
         access_token, refresh_token = generate_tokens(benutzer['id'], benutzer['email'])
         return jsonify({
-            "nachricht": "Login erfolgreich", 
-            "access_token": access_token,
-            "refresh_token": refresh_token,
+            "message": "Login erfolgreich", 
+            "token": access_token,  # Frontend espera 'token'
             "benutzer": benutzer_daten
         }), 200
     else:
-        return jsonify({"fehler": "Ungültige E-Mail oder Passwort."}), 401
+        return jsonify({"message": "Ungültige E-Mail oder Passwort."}), 401
 
 @benutzer_bp.route("/refresh", methods=["POST"])
 def refresh():
@@ -150,17 +161,17 @@ def refresh():
     
     @return {Object} response
     @return {string} response.access_token - Neuer Access Token
-    @return {string} [response.fehler] - Fehlermeldung bei Misserfolg
+    @return {string} [response.message] - Fehlermeldung bei Misserfolg
     
     @throws {401} - Bei ungültigem Refresh Token
     """
     refresh_token = request.json.get('refresh_token')
     if not refresh_token:
-        return jsonify({"fehler": "Refresh Token erforderlich"}), 401
+        return jsonify({"message": "Refresh Token erforderlich"}), 401
 
     token_data = token_verifizieren(refresh_token)
     if not token_data or token_data.get('type') != 'refresh':
-        return jsonify({"fehler": "Ungültiger Refresh Token"}), 401
+        return jsonify({"message": "Ungültiger Refresh Token"}), 401
 
     # Gerar novo access token
     access_token, _ = generate_tokens(token_data['benutzer_id'], token_data['email'])
@@ -201,8 +212,14 @@ def profil_abrufen(token_daten):
     
     @auth Erfordert gültigen JWT-Token
     
-    @return {Object} response
-    @return {Object} response.profil - Profildaten des Benutzers
+    @return {Object} response - Profildaten des Benutzers mit Statistiken
+    @return {int} response.id - Benutzer-ID
+    @return {string} response.name - Benutzername
+    @return {string} response.email - E-Mail-Adresse
+    @return {string} response.profilbild_url - URL des Profilbilds
+    @return {string} response.beschreibung - Profilbeschreibung
+    @return {int} response.favorites_count - Anzahl der Favoriten
+    @return {int} response.recipes_count - Anzahl der erstellten Rezepte
     
     @throws {401} Bei fehlendem oder ungültigem Token
     @throws {404} Wenn Profil nicht gefunden
@@ -211,12 +228,10 @@ def profil_abrufen(token_daten):
     profil = benutzer_profil_abrufen(benutzer_id)
     
     if profil:
-        return jsonify({
-            "profil": profil
-        }), 200
+        return jsonify(profil), 200
     else:
         return jsonify({
-            "fehler": "Profil nicht gefunden"
+            "message": "Profil nicht gefunden"
         }), 404
 
 @benutzer_bp.route("/profil", methods=["PUT"])
@@ -250,12 +265,12 @@ def profil_aktualisieren(token_daten):
     # Validierung der Eingabedaten
     if email and not email_validieren(email):
         return jsonify({
-            "fehler": "Ungültige E-Mail-Adresse"
+            "message": "Ungültige E-Mail-Adresse"
         }), 400
         
     if name and len(name) < 3:
         return jsonify({
-            "fehler": "Name muss mindestens 3 Zeichen haben"
+            "message": "Name muss mindestens 3 Zeichen haben"
         }), 400
     
     if benutzer_profil_aktualisieren(benutzer_id, name, email, beschreibung):
@@ -264,7 +279,7 @@ def profil_aktualisieren(token_daten):
         }), 200
     else:
         return jsonify({
-            "fehler": "Fehler beim Aktualisieren des Profils"
+            "message": "Fehler beim Aktualisieren des Profils"
         }), 500
 
 @benutzer_bp.route("/profil/bild", methods=["POST"])
@@ -288,21 +303,21 @@ def profilbild_hochladen(token_daten):
     """
     if 'bild' not in request.files:
         return jsonify({
-            "fehler": "Keine Bilddatei hochgeladen"
+            "message": "Keine Bilddatei hochgeladen"
         }), 400
         
     bild = request.files['bild']
     if not bild.filename:
         return jsonify({
-            "fehler": "Keine Bilddatei ausgewählt"
+            "message": "Keine Bilddatei ausgewählt"
         }), 400
         
     # Überprüfen des Dateityps
-    erlaubte_typen = {'png', 'jpg', 'jpeg', 'gif'}
+    erlaubte_typen = {'png', 'jpg', 'jpeg', 'gif', 'avif', 'webp'}
     if not '.' in bild.filename or \
        bild.filename.rsplit('.', 1)[1].lower() not in erlaubte_typen:
         return jsonify({
-            "fehler": "Ungültiger Dateityp"
+            "message": "Ungültiger Dateityp. Erlaubt: PNG, JPG, JPEG, GIF, AVIF, WebP"
         }), 400
     
     benutzer_id = token_daten["benutzer_id"]
@@ -315,7 +330,7 @@ def profilbild_hochladen(token_daten):
         }), 200
     else:
         return jsonify({
-            "fehler": "Fehler beim Hochladen des Profilbilds"
+            "message": "Fehler beim Hochladen des Profilbilds"
         }), 500
 
 @benutzer_bp.route("/passwort-vergessen", methods=["POST"])
@@ -333,35 +348,30 @@ def passwort_vergessen():
     @return {string} [response.fehler] - Fehlermeldung bei Misserfolg
     
     @throws {400} Bei ungültiger E-Mail-Adresse
-    @throws {404} Wenn Benutzer nicht gefunden
     """
     daten = request.get_json()
     email = daten.get("email")
 
     if not email or not email_validieren(email):
         return jsonify({
-            "fehler": "Bitte geben Sie eine gültige E-Mail-Adresse ein."
+            "message": "Bitte geben Sie eine gültige E-Mail-Adresse ein."
         }), 400
 
     benutzer = benutzer_per_email_finden(email)
-    if not benutzer:
-        return jsonify({
-            "fehler": "Es wurde kein Konto mit dieser E-Mail-Adresse gefunden."
-        }), 404
-
-    token = reset_token_erstellen(benutzer["id"])
-    if not token:
-        return jsonify({
-            "fehler": "Fehler beim Erstellen des Reset-Links."
-        }), 500
-
-    # TODO: E-Mail mit Reset-Link senden
-    # Für Testzwecke geben wir den Token direkt zurück
-    reset_url = f"{request.host_url}passwort-zuruecksetzen/{token}"
+    
+    # Für Sicherheit, immer eine Erfolgsmeldung zurückgeben
+    # auch wenn der Benutzer nicht existiert
+    if benutzer:
+        token = reset_token_erstellen(benutzer["id"])
+        if token:
+            # TODO: E-Mail mit Reset-Link senden
+            # Für Testzwecke geben wir den Token direkt zurück
+            reset_url = f"{request.host_url}passwort-zuruecksetzen/{token}"
+            print(f"Reset URL für {email}: {reset_url}")  # Für Debug
     
     return jsonify({
-        "nachricht": "Ein Link zum Zurücksetzen des Passworts wurde an Ihre E-Mail-Adresse gesendet.",
-        "reset_url": reset_url  # Nur für Testzwecke
+        "success": True,
+        "message": "Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde ein Link zum Zurücksetzen des Passworts gesendet."
     }), 200
 
 @benutzer_bp.route("/passwort-reset/<token>/validieren", methods=["GET"])
@@ -380,7 +390,7 @@ def reset_token_pruefen(token):
     """
     if not token:
         return jsonify({
-            "fehler": "Kein Token angegeben."
+            "message": "Kein Token angegeben."
         }), 400
 
     benutzer_id = reset_token_validieren(token)
@@ -402,13 +412,13 @@ def passwort_reset(token):
     
     @return {Object} response
     @return {string} response.nachricht - Erfolgsmeldung
-    @return {string} [response.fehler] - Fehlermeldung bei Misserfolg
+    @return {string} [response.message] - Fehlermeldung bei Misserfolg
     
     @throws {400} Bei ungültigem Token oder Passwort
     """
     if not token:
         return jsonify({
-            "fehler": "Kein Token angegeben."
+            "message": "Kein Token angegeben."
         }), 400
 
     daten = request.get_json()
@@ -416,7 +426,7 @@ def passwort_reset(token):
 
     if not passwort or not passwort_validieren(passwort):
         return jsonify({
-            "fehler": "Das neue Passwort muss mindestens 8 Zeichen, einen Großbuchstaben, eine Zahl und ein Sonderzeichen enthalten."
+            "message": "Das neue Passwort muss mindestens 8 Zeichen, einen Großbuchstaben, eine Zahl und ein Sonderzeichen enthalten."
         }), 400
 
     if passwort_zuruecksetzen(token, passwort):
@@ -425,5 +435,5 @@ def passwort_reset(token):
         }), 200
     else:
         return jsonify({
-            "fehler": "Der Reset-Link ist ungültig oder abgelaufen."
+            "message": "Der Reset-Link ist ungültig oder abgelaufen."
         }), 400

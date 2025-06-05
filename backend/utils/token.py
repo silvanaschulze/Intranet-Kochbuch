@@ -69,14 +69,23 @@ def token_verifizieren(token: str) -> Optional[Dict]:
     @throws {jwt.InvalidTokenError} Bei ungültigem Token
     """
     try:
+        print(f"🔍 Token validation debug:")
+        print(f"   Secret Key: {SECRET_KEY[:10]}...")
+        print(f"   Token (first 50): {token[:50]}...")
+        print(f"   Token in blacklist: {token in token_blacklist}")
+        
         if token in token_blacklist:
+            print("❌ Token está na blacklist")
             return None
             
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        print(f"✅ Token decodificado com sucesso: {payload}")
         return payload
-    except jwt.ExpiredSignatureError:
+    except jwt.ExpiredSignatureError as e:
+        print(f"❌ Token expirado: {e}")
         return None
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as e:
+        print(f"❌ Token inválido: {e}")
         return None
 
 def token_blacklisten(token: str) -> None:

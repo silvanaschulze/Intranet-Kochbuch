@@ -1,5 +1,5 @@
 /**
- * @fileoverview Login-Seite für die Benutzerauthentifizierung
+ * @fileoverview Login-Komponente zur Benutzeranmeldung
  * @component Login
  */
 
@@ -14,16 +14,16 @@ import { addNotification } from '../Layout/Layout';
 // Login-Schema für Formularvalidierung
 const LoginSchema = Yup.object().shape({
   email: Yup.string()
-    .email('E-mail inválido')
-    .required('E-mail é obrigatório'),
+    .email('Ungültige E-Mail-Adresse')
+    .required('E-Mail ist erforderlich'),
   password: Yup.string()
-    .required('Senha é obrigatória')
+    .required('Passwort ist erforderlich')
 });
 
 /**
- * Login Componente
- * Fornece um formulário para autenticação do usuário
- * @returns {JSX.Element} Componente renderizado
+ * Login-Komponente
+ * Behandelt die Benutzeranmeldung mit E-Mail und Passwort
+ * @returns {JSX.Element} Gerenderte Login-Komponente
  */
 const Login = () => {
   const { login } = useAuth();
@@ -31,13 +31,13 @@ const Login = () => {
   const location = useLocation();
   const [loginError, setLoginError] = useState('');
 
-  // Verifica se há uma URL de redirecionamento
+  // Prüfen, ob eine Weiterleitungs-URL vorhanden ist
   const from = location.state?.from?.pathname || '/rezepte';
 
-  // Mostra notificação se o usuário foi redirecionado de uma rota protegida
+  // Benachrichtigung anzeigen, wenn Benutzer von geschützter Route weitergeleitet wurde
   useEffect(() => {
     if (location.state?.from) {
-      addNotification('Por favor, faça login para continuar', 'info');
+      addNotification('Bitte melden Sie sich an, um fortzufahren', 'info');
     }
   }, [location.state]);
 
@@ -45,13 +45,13 @@ const Login = () => {
     try {
       setLoginError('');
       await login(values.email, values.password);
-      addNotification('Login realizado com sucesso!', 'success');
+      addNotification('Anmeldung erfolgreich!', 'success');
       navigate(from);
     } catch (err) {
-      console.error('Erro ao fazer login:', err);
+      console.error('Fehler beim Anmelden:', err);
       setLoginError(
         err.message || 
-        'Ocorreu um erro. Por favor, tente novamente mais tarde.'
+        'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.'
       );
     } finally {
       setSubmitting(false);
@@ -64,7 +64,7 @@ const Login = () => {
         <Col md={6}>
           <Card className="shadow">
             <Card.Header as="h4" className="text-center bg-primary text-white">
-              Login
+              Anmelden
             </Card.Header>
             <Card.Body className="p-4">
               {loginError && (
@@ -89,7 +89,7 @@ const Login = () => {
                 }) => (
                   <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
-                      <Form.Label>E-mail</Form.Label>
+                      <Form.Label>E-Mail</Form.Label>
                       <Form.Control
                         type="email"
                         name="email"
@@ -97,7 +97,7 @@ const Login = () => {
                         onChange={handleChange}
                         onBlur={handleBlur}
                         isInvalid={touched.email && errors.email}
-                        placeholder="seu.email@exemplo.com"
+                        placeholder="ihre.email@beispiel.com"
                         autoComplete="email"
                       />
                       <Form.Control.Feedback type="invalid">
@@ -106,7 +106,7 @@ const Login = () => {
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-                      <Form.Label>Senha</Form.Label>
+                      <Form.Label>Passwort</Form.Label>
                       <Form.Control
                         type="password"
                         name="password"
@@ -114,7 +114,7 @@ const Login = () => {
                         onChange={handleChange}
                         onBlur={handleBlur}
                         isInvalid={touched.password && errors.password}
-                        placeholder="Sua senha"
+                        placeholder="Ihr Passwort"
                         autoComplete="current-password"
                       />
                       <Form.Control.Feedback type="invalid">
@@ -139,10 +139,10 @@ const Login = () => {
                       {isSubmitting ? (
                         <>
                           <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                          Entrando...
+                          Anmelden...
                         </>
                       ) : (
-                        'Entrar'
+                        'Anmelden'
                       )}
                     </Button>
                   </Form>
@@ -151,9 +151,9 @@ const Login = () => {
             </Card.Body>
             <Card.Footer className="text-center py-3 bg-light">
               <p className="mb-0">
-                Ainda não tem uma conta?{' '}
+                Noch kein Konto?{' '}
                 <Link to="/register" className="text-primary text-decoration-none">
-                  Cadastre-se
+                  Registrieren
                 </Link>
               </p>
             </Card.Footer>

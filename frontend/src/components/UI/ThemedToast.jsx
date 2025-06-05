@@ -1,5 +1,5 @@
 /**
- * @fileoverview Themed Toast Container Component
+ * @fileoverview Thematisierte Toast-Container-Komponente
  * @component ThemedToast
  */
 
@@ -8,9 +8,9 @@ import { ToastContainer } from 'react-toastify';
 import { useTheme } from '../../context/ThemeContext';
 
 /**
- * ThemedToast Component
- * Renders a ToastContainer that adapts to the current theme
- * @returns {JSX.Element} ThemedToast component
+ * ThemedToast-Komponente
+ * Bietet Toast-Nachrichten basierend auf dem aktuellen Theme
+ * @returns {JSX.Element} ThemedToast-Komponente
  */
 const ThemedToast = () => {
   const { theme } = useTheme();

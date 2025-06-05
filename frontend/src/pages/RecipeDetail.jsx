@@ -4,12 +4,85 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Card, Button, Modal, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Modal, Alert, Spinner, Badge } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getRecipe, deleteRecipe } from '../services/recipeService';
+import { rateRecipe, getUserRating, getAverageRating } from '../services/ratingService';
 import { useAuth } from '../context/AuthContext';
 import FavoriteButton from '../components/Recipe/FavoriteButton';
 import CommentSection from '../components/Recipe/CommentSection';
+import { FaUserTie, FaEdit, FaTrash, FaCarrot, FaConciergeBell, FaComments } from 'react-icons/fa';
+
+// Basis-URL für Backend-Bilder
+const API_URL = process.env.REACT_APP_API_URL || 'http://192.168.64.3:5000';
+
+/**
+ * Erstellt vollständige URL für Rezeptbild
+ * @param {string} imagePath - Relativer Pfad zum Bild
+ * @returns {string} Vollständige URL zum Rezeptbild
+ */
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  
+  // Bereits vollständige URL
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  // Relativer Pfad - vollständige URL erstellen
+  let fullUrl;
+  if (imagePath.startsWith('static/uploads/')) {
+    // Hat bereits den vollständigen Pfad
+    fullUrl = `${API_URL}/${imagePath}`;
+  } else if (imagePath.startsWith('uploads/')) {
+    // Fehlt nur das static/
+    fullUrl = `${API_URL}/static/${imagePath}`;
+  } else {
+    // Hat nur den Dateinamen - static/uploads/ hinzufügen
+    fullUrl = `${API_URL}/static/uploads/${imagePath}`;
+  }
+  
+  return fullUrl;
+};
+
+/**
+ * Stern-Bewertungs-Komponente
+ */
+const StarRating = ({ rating, onRate, readOnly = false }) => {
+  const [hoverRating, setHoverRating] = useState(0);
+
+  const renderStar = (index) => {
+    const filled = (hoverRating || rating) >= index + 1;
+    return (
+      <span
+        key={index}
+        className={`star ${filled ? 'filled' : ''} ${!readOnly ? 'clickable' : ''}`}
+        onClick={() => !readOnly && onRate && onRate(index + 1)}
+        onMouseEnter={() => !readOnly && setHoverRating(index + 1)}
+        onMouseLeave={() => !readOnly && setHoverRating(0)}
+        style={{
+          fontSize: '1.5rem',
+          color: filled ? '#ffc107' : '#e4e5e9',
+          cursor: readOnly ? 'default' : 'pointer',
+          marginRight: '0.2rem'
+        }}
+      >
+        ★
+      </span>
+    );
+  };
+
+  return (
+    <div className="star-rating">
+      {[...Array(5)].map((_, index) => renderStar(index))}
+      {rating && (
+        <span className="ms-2 text-muted">
+          ({rating.toFixed(1)})
+        </span>
+      )}
+    </div>
+  );
+};
 
 /**
  * RecipeDetailPage Komponente
@@ -26,7 +99,37 @@ const RecipeDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userRating, setUserRating] = useState(0);
+  const [averageRating, setAverageRating] = useState(0);
 
+  /**
+   * Lädt die eigene Bewertung des Benutzers
+   */
+  const loadUserRating = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const response = await getUserRating(id);
+      if (response.bewertung) {
+        setUserRating(response.bewertung.bewertung);
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der Benutzerbewertung:', error);
+      // Ignoriere Fehler - kann bedeuten, dass noch keine Bewertung vorhanden ist
+    }
+  }, [id, user]);
+
+  /**
+   * Lädt die Bewertungsstatistiken
+   */
+  const loadRatingStats = useCallback(async () => {
+    try {
+      const response = await getAverageRating(id);
+      setAverageRating(response.durchschnitt || 0);
+    } catch (error) {
+      console.error('Fehler beim Laden der Bewertungsstatistiken:', error);
+    }
+  }, [id]);
 
   /**
    * Lädt die Details eines spezifischen Rezepts
@@ -44,14 +147,16 @@ const RecipeDetailPage = () => {
     } finally {
       setLoading(false);
     }
-      }, [id]);
+  }, [id]);
 
   /**
    * Lädt die Rezeptdetails beim ersten Render
    */
   useEffect(() => {
     loadRecipeDetails();
-  }, [loadRecipeDetails]);
+    loadUserRating();
+    loadRatingStats();
+  }, [loadRecipeDetails, loadUserRating, loadRatingStats]);
 
   /**
    * Verarbeitet das Löschen eines Rezepts
@@ -65,6 +170,23 @@ const RecipeDetailPage = () => {
     } catch (err) {
       console.error('Fehler beim Löschen des Rezepts:', err);
       setError('Das Rezept konnte nicht gelöscht werden. Bitte versuchen Sie es später erneut.');
+    }
+  };
+
+  /**
+   * Behandelt die Bewertungsabgabe
+   */
+  const handleRate = async (rating) => {
+    try {
+      const response = await rateRecipe(id, rating);
+      console.log('✅ Bewertung erfolgreich gespeichert:', response);
+      setUserRating(rating);
+      
+      // Bewertungsstatistiken neu laden
+      await loadRatingStats();
+    } catch (err) {
+      console.error('Fehler beim Bewerten:', err);
+      setError('Ihre Bewertung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.');
     }
   };
 
@@ -98,106 +220,210 @@ const RecipeDetailPage = () => {
 
   return (
     <Container className="py-4">
-      <Card>
-        <Card.Header className="d-flex justify-content-between align-items-center">
-          <h1 className="mb-0">{recipe.titel}</h1>
-          <div className="d-flex align-items-center">
-            {user && (
-              <FavoriteButton
-                recipeId={recipe.id}
-                initialIsFavorite={recipe.is_favorite}
-                className="me-2"
-              />
+      {/* Rezept-Kopfbereich mit Bild */}
+      <div className="recipe-hero mb-4">
+        <Row>
+          <Col lg={6}>
+            {recipe.bild_pfad ? (
+              <div className="recipe-image-container">
+                <img
+                  src={getImageUrl(recipe.bild_pfad)}
+                  alt={`Bild von ${recipe.titel}`}
+                  className="img-fluid rounded-3 shadow-sm"
+                  style={{ 
+                    width: '100%',
+                    height: '400px',
+                    objectFit: 'cover'
+                  }}
+                />
+              </div>
+            ) : (
+              <div 
+                className="recipe-placeholder d-flex align-items-center justify-content-center rounded-3 bg-light"
+                style={{ height: '400px' }}
+              >
+                <span className="text-muted fs-1">🍽️</span>
+              </div>
             )}
-            {isOwner && (
-              <>
-                <Button
-                  variant="outline-primary"
-                  onClick={() => navigate(`/rezepte/${id}/bearbeiten`)}
-                  className="me-2"
-                >
-                  Bearbeiten
-                </Button>
-                <Button
-                  variant="outline-danger"
-                  onClick={() => setShowDeleteModal(true)}
-                >
-                  Löschen
-                </Button>
-              </>
-            )}
-          </div>
-        </Card.Header>
+          </Col>
+          <Col lg={6} className="d-flex flex-column justify-content-center">
+            <div className="recipe-info p-4">
+              <div className="mb-3">
+                <Badge bg="primary" className="mb-2">{recipe.kategorie_name}</Badge>
+                <h1 className="display-5 fw-bold mb-3">{recipe.titel}</h1>
+              </div>
 
-        <Card.Body>
-          {recipe.bild_url && (
-            <div className="text-center mb-4">
-              <img
-                src={recipe.bild_url}
-                alt={`Bild von ${recipe.titel}`}
-                className="img-fluid rounded"
-                style={{ maxHeight: '400px' }}
-              />
-            </div>
-          )}
-
-          <Row>
-            <Col md={4}>
-              <Card className="mb-3">
-                <Card.Header>
-                  <strong>Details</strong>
-                </Card.Header>
-                <Card.Body>
-                  <p><strong>Kategorie:</strong> {recipe.kategorie_name}</p>
-                  {recipe.benutzer && (
-                    <p><strong>Erstellt von:</strong> {recipe.benutzer.name}</p>
-                  )}
-                  <p><strong>Erstellt am:</strong> {new Date(recipe.erstellungsdatum).toLocaleDateString('de-DE')}</p>
-                </Card.Body>
-              </Card>
-
-              <Card>
-                <Card.Header>
-                  <strong>Zutaten</strong>
-                </Card.Header>
-                <Card.Body>
-                  <ul className="list-unstyled">
-                    {recipe.zutaten.map((zutat, index) => (
-                      <li key={index}>
-                        {zutat.menge} {zutat.einheit} {zutat.name}
-                      </li>
-                    ))}
-                  </ul>
-                </Card.Body>
-              </Card>
-            </Col>
-
-            <Col md={8}>
-              <Card className="mb-4">
-                <Card.Header>
-                  <strong>Zubereitung</strong>
-                </Card.Header>
-                <Card.Body>
-                  <div style={{ whiteSpace: 'pre-line' }}>
-                    {recipe.zubereitung}
+              {/* Creator Info */}
+              <div className="creator-info mb-4 p-3 bg-light rounded">
+                <div className="d-flex align-items-center">
+                  <div className="creator-avatar me-3">
+                    <div 
+                      className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                      style={{ width: '50px', height: '50px' }}
+                    >
+                      <FaUserTie size={20} />
+                    </div>
                   </div>
-                </Card.Body>
-              </Card>
+                  <div>
+                    <h6 className="mb-1">Erstellt von</h6>
+                    <p className="mb-1 fw-bold">{recipe.benutzer?.name || 'Unbekannt'}</p>
+                    <small className="text-muted">
+                      {new Date(recipe.erstellungsdatum).toLocaleDateString('de-DE', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </small>
+                  </div>
+                </div>
+              </div>
 
-              {user && (
-                <Card>
-                  <Card.Header>
-                    <strong>Kommentare</strong>
-                  </Card.Header>
-                  <Card.Body>
-                    <CommentSection recipeId={recipe.id} />
-                  </Card.Body>
-                </Card>
-              )}
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
+              {/* Rating Section */}
+              <div className="rating-section mb-4">
+                <h6 className="mb-2">Bewertung</h6>
+                
+                {/* Durchschnittsbewertung */}
+                {averageRating > 0 && (
+                  <div className="mb-2">
+                    <small className="text-muted">Durchschnitt:</small>
+                    <div className="d-flex align-items-center">
+                      <StarRating 
+                        rating={averageRating} 
+                        readOnly={true}
+                      />
+                      <span className="ms-2 text-muted small">
+                        ({averageRating.toFixed(1)} Sterne)
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Benutzerbewertung */}
+                {user && (
+                  <div>
+                    <small className="text-muted">
+                      {userRating > 0 ? 'Ihre Bewertung:' : 'Bewerten Sie dieses Rezept:'}
+                    </small>
+                    <StarRating 
+                      rating={userRating} 
+                      onRate={handleRate}
+                      readOnly={false}
+                    />
+                    <small className="text-muted d-block mt-1">
+                      {userRating > 0 ? 
+                        `Sie haben ${userRating} von 5 Sternen gegeben` : 
+                        'Klicken Sie auf die Sterne zum Bewerten'
+                      }
+                    </small>
+                  </div>
+                )}
+                
+                {!user && averageRating === 0 && (
+                  <div className="text-muted">
+                    <small>Noch keine Bewertungen vorhanden</small>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="action-buttons d-flex gap-2 flex-wrap">
+                {user && (
+                  <FavoriteButton
+                    recipeId={recipe.id}
+                    initialIsFavorite={recipe.is_favorite}
+                    className="btn-lg"
+                  />
+                )}
+                {isOwner && (
+                  <>
+                    <Button
+                      variant="warning"
+                      size="lg"
+                      onClick={() => navigate(`/rezepte/${id}/bearbeiten`)}
+                      className="d-flex align-items-center"
+                    >
+                      <FaEdit className="me-2" /> Bearbeiten
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="lg"
+                      onClick={() => setShowDeleteModal(true)}
+                      className="d-flex align-items-center"
+                    >
+                      <FaTrash className="me-2" /> Löschen
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </Col>
+        </Row>
+      </div>
+
+      {/* Recipe Content */}
+      <Row className="g-4">
+        {/* Zutaten-Seitenleiste */}
+        <Col lg={4}>
+          <Card className="sticky-top" style={{ top: '100px' }}>
+            <Card.Header className="bg-gradient text-white">
+              <h5 className="mb-0">
+                <FaCarrot className="me-2" />
+                Zutaten
+              </h5>
+            </Card.Header>
+            <Card.Body>
+              <ul className="list-unstyled mb-0">
+                {recipe.zutaten.map((zutat, index) => (
+                  <li key={index} className="mb-2 p-2 bg-light rounded">
+                    <span className="fw-bold text-primary">{zutat.menge}</span>
+                    {zutat.einheit && <span className="text-muted"> {zutat.einheit}</span>}
+                    <span className="ms-2">{zutat.name}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        {/* Anweisungen */}
+        <Col lg={8}>
+          <Card className="mb-4">
+            <Card.Header className="bg-gradient text-white">
+              <h5 className="mb-0">
+                <FaConciergeBell className="me-2" />
+                Zubereitung
+              </h5>
+            </Card.Header>
+            <Card.Body>
+              <div 
+                className="preparation-steps"
+                style={{ 
+                  whiteSpace: 'pre-line',
+                  fontSize: '1.1rem',
+                  lineHeight: '1.6'
+                }}
+              >
+                {recipe.zubereitung}
+              </div>
+            </Card.Body>
+          </Card>
+
+          {/* Kommentarbereich */}
+          {user && (
+            <Card>
+              <Card.Header className="bg-gradient text-white">
+                <h5 className="mb-0">
+                  <FaComments className="me-2" />
+                  Kommentare
+                </h5>
+              </Card.Header>
+              <Card.Body>
+                <CommentSection recipeId={recipe.id} />
+              </Card.Body>
+            </Card>
+          )}
+        </Col>
+      </Row>
 
       {/* Lösch-Bestätigungsdialog */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>

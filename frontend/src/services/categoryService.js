@@ -81,7 +81,7 @@ export const getCategory = async (categoryId) => {
     return response.data;
   } catch (error) {
     if (error.response?.status === 404) {
-      throw { message: 'Kategorie nicht gefunden' };
+      throw new Error('Kategorie nicht gefunden');
     }
     throw error.response?.data || error;
   }
@@ -134,7 +134,7 @@ export const updateCategory = async (categoryId, categoryData) => {
   } catch (error) {
     if (error.field) throw error;
     if (error.response?.status === 404) {
-      throw { message: 'Kategorie nicht gefunden' };
+      throw new Error('Kategorie nicht gefunden');
     }
     if (error.response?.status === 409) {
       throw { message: 'Eine Kategorie mit diesem Namen existiert bereits', field: 'name' };
@@ -154,7 +154,7 @@ export const deleteCategory = async (categoryId) => {
     await api.delete(`/api/kategorien/${categoryId}`);
   } catch (error) {
     if (error.response?.status === 404) {
-      throw { message: 'Kategorie nicht gefunden' };
+      throw new Error('Kategorie nicht gefunden');
     }
     if (error.response?.status === 409) {
       throw { message: 'Kategorie kann nicht gelöscht werden, da sie noch Rezepte enthält' };
@@ -180,7 +180,7 @@ export const getCategoryRecipes = async (categoryId, page = 1, limit = 10, sorti
     return response.data;
   } catch (error) {
     if (error.response?.status === 404) {
-      throw { message: 'Kategorie nicht gefunden' };
+      throw new Error('Kategorie nicht gefunden');
     }
     throw error.response?.data || error;
   }

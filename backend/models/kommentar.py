@@ -89,7 +89,7 @@ def kommentare_abrufen(rezept_id):
             SELECT 
                 k.id,
                 k.text,
-                k.erstellt_am,
+                k.erstellt_am as erstellungsdatum,
                 k.benutzer_id,
                 b.name as benutzer_name
             FROM kommentare k
@@ -102,7 +102,7 @@ def kommentare_abrufen(rezept_id):
         
         # Formatiere das Datum für jeden Kommentar
         for kommentar in kommentare:
-            kommentar['erstellt_am'] = kommentar['erstellt_am'].strftime('%d.%m.%Y %H:%M')
+            kommentar['erstellungsdatum'] = kommentar['erstellungsdatum'].strftime('%Y-%m-%d %H:%M:%S')
         
         return kommentare
     except Exception as e:
@@ -144,5 +144,46 @@ def kommentar_details(kommentar_id):
     except Exception as e:
         print(f"Fehler beim Abrufen der Kommentardetails: {e}")
         return None
+    finally:
+        cursor.close()
+
+def kommentar_bearbeiten(kommentar_id, benutzer_id, neuer_text):
+    """
+    Bearbeitet einen Kommentar, wenn er dem Benutzer gehört.
+    
+    @param {int} kommentar_id - ID des Kommentars
+    @param {int} benutzer_id - ID des Benutzers
+    @param {string} neuer_text - Neuer Kommentartext
+    @return {boolean} True bei Erfolg, False bei Fehler oder nicht berechtigt
+    """
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        
+        # Prüfen, ob der Kommentar dem Benutzer gehört
+        check_sql = """
+            SELECT benutzer_id 
+            FROM kommentare 
+            WHERE id = %s
+        """
+        cursor.execute(check_sql, (kommentar_id,))
+        result = cursor.fetchone()
+        
+        if not result or result[0] != benutzer_id:
+            return False
+            
+        # Kommentar aktualisieren
+        update_sql = """
+            UPDATE kommentare 
+            SET text = %s, aktualisiert_am = %s 
+            WHERE id = %s
+        """
+        cursor.execute(update_sql, (neuer_text, datetime.now(), kommentar_id))
+        db.commit()
+        
+        return True
+    except Exception as e:
+        print(f"Fehler beim Bearbeiten des Kommentars: {e}")
+        return False
     finally:
         cursor.close() 

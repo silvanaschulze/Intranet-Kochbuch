@@ -32,11 +32,21 @@ export const getFavorites = async (page = 1, limit = 10, sortierung = 'newest') 
     const response = await api.get('/api/favoriten', {
       params: { page, limit, sortierung }
     });
-    return response.data;
+    
+    // Handle the response structure - backend returns { favoriten: [...] }
+    const favorites = response.data?.favoriten || response.data || [];
+    
+    return {
+      favoriten: Array.isArray(favorites) ? favorites : [],
+      total: Array.isArray(favorites) ? favorites.length : 0,
+      page: page,
+      limit: limit
+    };
   } catch (error) {
     if (error.response?.status === 401) {
       throw { message: 'Bitte melden Sie sich an, um Ihre Favoriten zu sehen' };
     }
+    console.error('Error fetching favorites:', error);
     throw error.response?.data || error;
   }
 };
@@ -56,10 +66,10 @@ export const addToFavorites = async (recipeId) => {
       throw { message: 'Bitte melden Sie sich an, um Rezepte zu favorisieren' };
     }
     if (error.response?.status === 404) {
-      throw { message: 'Rezept nicht gefunden' };
+      throw new Error('Rezept nicht gefunden');
     }
     if (error.response?.status === 409) {
-      throw { message: 'Rezept ist bereits favorisiert' };
+      throw new Error('Rezept ist bereits favorisiert');
     }
     throw error.response?.data || error;
   }
@@ -80,7 +90,7 @@ export const removeFromFavorites = async (recipeId) => {
       throw { message: 'Bitte melden Sie sich an, um Favoriten zu verwalten' };
     }
     if (error.response?.status === 404) {
-      throw { message: 'Rezept nicht gefunden oder nicht favorisiert' };
+      throw new Error('Rezept nicht gefunden oder nicht favorisiert');
     }
     throw error.response?.data || error;
   }
@@ -101,7 +111,7 @@ export const getFavoriteStatus = async (recipeId) => {
       return { ist_favorit: false, favoriten_anzahl: 0 };
     }
     if (error.response?.status === 404) {
-      throw { message: 'Rezept nicht gefunden' };
+      throw new Error('Rezept nicht gefunden');
     }
     throw error.response?.data || error;
   }

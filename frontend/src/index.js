@@ -10,22 +10,20 @@ import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
 
 // Globale Fehlerbehandlung
-const errorHandler = (error, errorInfo) => {
-  console.error('Anwendungsfehler:', error);
-  console.error('Komponentenstapel:', errorInfo);
-  // Hier können Sie einen Fehler-Tracking-Service einbinden
-};
-
 window.onerror = (message, source, lineno, colno, error) => {
   console.error('Globaler Fehler:', { message, source, lineno, colno, error });
   return false;
 };
 
-window.onunhandledrejection = (event) => {
-  console.error('Unbehandelter Promise-Fehler:', event.reason);
-};
+/**
+ * Globale Behandlung von nicht behandelten Promise-Ablehnungen
+ */
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unbehandelte Promise-Ablehnung:', event.reason);
+  // Hier können Sie den Fehler an einen Logging-Service senden
+});
 
-// Performance-Monitoring
+// Performance-Überwachung
 const reportPerformance = (metric) => {
   console.log(metric); // Ersetzen Sie dies durch Ihren Analytics-Service
 };
