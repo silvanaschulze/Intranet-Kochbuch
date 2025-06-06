@@ -9,9 +9,9 @@ echo "========================================"
 
 # Definir variáveis
 SOBRENOME="schulze"
-PROJETO_DIR="intranet-kochbuch"
+PROJETO_DIR="."
 DB_NAME="fi37_${SOBRENOME}_fpadw"
-DB_USER="root"  # Altere se necessário
+DB_USER="kochbuch"  # Altere se necessário
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 # Cores para output
